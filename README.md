@@ -1,6 +1,6 @@
 # moe-inference-engine
 
-A from-scratch LLM inference engine that serves miniMoE (a 280M sparse Mixture-of-Experts model trained from scratch) fast.
+A from-scratch LLM inference engine that serves [miniMoE](https://github.com/maokner/miniMoE) (a 280M sparse Mixture-of-Experts model trained from scratch) fast.
 Custom Triton/CUDA kernels, paged KV cache, continuous batching, and quantization - benchmarked honestly against vLLM and llama.cpp.
 
 ## The big picture
