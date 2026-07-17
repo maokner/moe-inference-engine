@@ -1,0 +1,11 @@
+{
+  "system": "reference (no KV cache)",
+  "device": "mps",
+  "torch": "2.13.0",
+  "machine": "arm64",
+  "checkpoint_step": 6358,
+  "prompt_tokens": 62,
+  "new_tokens": 128,
+  "prefill_ms": 105.0,
+  "decode_tokens_per_sec": 2.2
+}

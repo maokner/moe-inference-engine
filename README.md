@@ -65,7 +65,27 @@ Honest measurement is half the credibility of this project:
 miniMoE means the model, tokenizer, and eval harness already exist, and I understand every layer of what the engine has to compute.
 "Trained a 280M MoE from scratch, then wrote the engine that serves it" is a full-stack story an interviewer can drill into at any level - from routing math down to memory hierarchy.
 
+## Quickstart
+
+Requires [uv](https://docs.astral.sh/uv/) and the miniMoE checkpoint (symlinked or copied into `checkpoints/`).
+
+```bash
+uv venv -p 3.12 && uv pip install -e ".[server]"
+
+# prove the model generates on this machine
+uv run python scripts/smoke_generate.py
+
+# measure the baseline: prefill latency + decode tokens/sec
+uv run python benchmarks/bench.py
+
+# serve it over HTTP
+uv run python scripts/serve.py
+curl -s localhost:8000/generate -H "Content-Type: application/json" \
+  -d '{"prompt": "The capital of France is"}'
+```
+
 ## Status
 
-Planning stage.
+Milestone 1 in progress: baseline server and benchmark harness running on MacBook (MPS).
+First recorded floor: **2.2 tok/s decode, 105ms prefill** for the reference no-KV-cache loop ([results/baseline_mps.json](results/baseline_mps.json)).
 See [moe-inference-engine.md](moe-inference-engine.md) for the full project plan, risks, and timeline.
