@@ -11,6 +11,17 @@ The reference model recomputes the ENTIRE context for every new token
 (no KV cache), so its decode cost grows with sequence length. That is
 exactly the flaw milestone 2 fixes - this harness exists to prove it.
 
+Measurement rules (each fixes a real bug in the first version of this file):
+- Decode is timed per token with our own greedy loop instead of timing
+  generate() as a black box. The loop does the same work, but per-token
+  times let us see decode slow down as the sequence grows, where a single
+  average would hide it.
+- The first decode step runs the model over the whole prompt - that IS the
+  prefill - so it is excluded from steady-state decode throughput.
+- The loop stops at EOS exactly like generate(), so throughput divides by
+  tokens actually produced, not tokens requested.
+- Decode is repeated like prefill, and the median run is reported.
+
 Usage:
     uv run python benchmarks/bench.py
     uv run python benchmarks/bench.py --output results/baseline.json
@@ -25,6 +36,8 @@ import tiktoken
 import torch
 
 from moe_engine.checkpoint import load_reference_model
+
+EOS_TOKEN_ID = 50256  # GPT-2 <|endoftext|>; the reference generate() stops on it too
 
 # A fixed prompt so every system we ever benchmark sees identical input.
 PROMPT = (
@@ -54,7 +67,7 @@ def sync(device: str) -> None:
         torch.mps.synchronize()
 
 
-def time_prefill(model, prompt_ids, device: str, repeats: int = 5) -> float:
+def time_prefill(model, prompt_ids, device: str, repeats: int) -> float:
     """Median seconds for one forward pass over the full prompt (~TTFT)."""
     times = []
     with torch.no_grad():
@@ -67,20 +80,39 @@ def time_prefill(model, prompt_ids, device: str, repeats: int = 5) -> float:
     return sorted(times)[len(times) // 2]
 
 
-def time_decode(model, prompt_ids, device: str, new_tokens: int) -> float:
-    """Seconds to generate new_tokens greedily (temperature=0 for determinism)."""
-    sync(device)
-    start = time.perf_counter()
-    model.generate(prompt_ids, max_new_tokens=new_tokens, temperature=0)
-    sync(device)
-    return time.perf_counter() - start
+def timed_greedy_decode(model, prompt_ids, device: str, new_tokens: int) -> list[float]:
+    """Greedy-decode up to new_tokens, returning seconds per generated token.
+
+    Same computation as the reference generate() at temperature=0 - full
+    recompute over the growing sequence each step - just with a stopwatch
+    around every token.
+    """
+    x = prompt_ids.unsqueeze(0)
+    step_times = []
+    with torch.no_grad():
+        for _ in range(new_tokens):
+            sync(device)
+            start = time.perf_counter()
+            logits, _ = model(x[:, -model.max_seq_length:])
+            next_token = logits[:, -1, :].argmax(dim=-1, keepdim=True)
+            sync(device)
+            step_times.append(time.perf_counter() - start)
+            x = torch.cat([x, next_token], dim=1)
+            if next_token.item() == EOS_TOKEN_ID:
+                break
+    return step_times
+
+
+def tok_per_sec(step_times: list[float]) -> float:
+    return round(len(step_times) / sum(step_times), 1)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
     parser.add_argument("--new-tokens", type=int, default=128)
-    parser.add_argument("--output", help="also write results to this JSON file")
+    parser.add_argument("--repeats", type=int, default=3)
+    parser.add_argument("--output", help="also write results (with per-token times) to this JSON file")
     args = parser.parse_args()
 
     device = pick_device()
@@ -90,10 +122,22 @@ def main() -> None:
 
     # Warmup: the first pass on a fresh device pays one-time setup costs
     # (kernel compilation, memory allocator growth) that aren't steady-state.
-    model.generate(prompt_ids, max_new_tokens=8, temperature=0)
+    timed_greedy_decode(model, prompt_ids, device, new_tokens=8)
 
-    prefill_s = time_prefill(model, prompt_ids, device)
-    decode_s = time_decode(model, prompt_ids, device, args.new_tokens)
+    prefill_s = time_prefill(model, prompt_ids, device, repeats=5)
+
+    runs = [
+        timed_greedy_decode(model, prompt_ids, device, args.new_tokens)
+        for _ in range(args.repeats)
+    ]
+    runs.sort(key=sum)
+    steps = runs[len(runs) // 2]  # the run with the median total time
+
+    # steps[0] processed the whole prompt (the prefill), so steady-state
+    # decode is everything after it. Splitting that in half shows the
+    # no-cache slowdown: the second half runs over a longer sequence.
+    decode = steps[1:]
+    half = len(decode) // 2
 
     results = {
         "system": "reference (no KV cache)",
@@ -102,13 +146,17 @@ def main() -> None:
         "machine": platform.machine(),
         "checkpoint_step": metadata["step"],
         "prompt_tokens": len(prompt_ids),
-        "new_tokens": args.new_tokens,
+        "requested_tokens": args.new_tokens,
+        "generated_tokens": len(steps),
         "prefill_ms": round(prefill_s * 1000, 1),
-        "decode_tokens_per_sec": round(args.new_tokens / decode_s, 1),
+        "decode_tok_per_sec": tok_per_sec(decode),
+        "decode_tok_per_sec_first_half": tok_per_sec(decode[:half]),
+        "decode_tok_per_sec_second_half": tok_per_sec(decode[half:]),
     }
 
     print(json.dumps(results, indent=2))
     if args.output:
+        results["step_times_ms"] = [round(t * 1000, 2) for t in steps]
         with open(args.output, "w") as f:
             json.dump(results, f, indent=2)
 

@@ -87,5 +87,5 @@ curl -s localhost:8000/generate -H "Content-Type: application/json" \
 ## Status
 
 Milestone 1 in progress: baseline server and benchmark harness running on MacBook (MPS).
-First recorded floor: **2.2 tok/s decode, 105ms prefill** for the reference no-KV-cache loop ([results/baseline_mps.json](results/baseline_mps.json)).
+First recorded floor for the reference no-KV-cache loop: **2.7 tok/s decode, 163ms prefill** - and decode decays from 3.7 tok/s (first 64 tokens) to 2.1 (next 64) because every step recomputes the whole sequence ([results/baseline_mps.json](results/baseline_mps.json)).
 See [moe-inference-engine.md](moe-inference-engine.md) for the full project plan, risks, and timeline.
