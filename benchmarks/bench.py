@@ -35,7 +35,8 @@ import time
 import tiktoken
 import torch
 
-from moe_engine.checkpoint import load_reference_model
+from moe_engine.checkpoint import load_engine_model, load_reference_model
+from moe_engine.model import KVCache
 
 EOS_TOKEN_ID = 50256  # GPT-2 <|endoftext|>; the reference generate() stops on it too
 
@@ -67,14 +68,14 @@ def sync(device: str) -> None:
         torch.mps.synchronize()
 
 
-def time_prefill(model, prompt_ids, device: str, repeats: int) -> float:
+def time_prefill(forward_once, device: str, repeats: int) -> float:
     """Median seconds for one forward pass over the full prompt (~TTFT)."""
     times = []
     with torch.no_grad():
         for _ in range(repeats):
             sync(device)
             start = time.perf_counter()
-            model(prompt_ids.unsqueeze(0))
+            forward_once()
             sync(device)
             times.append(time.perf_counter() - start)
     return sorted(times)[len(times) // 2]
@@ -103,12 +104,36 @@ def timed_greedy_decode(model, prompt_ids, device: str, new_tokens: int) -> list
     return step_times
 
 
+def timed_greedy_decode_engine(model, prompt_ids, device: str, new_tokens: int) -> list[float]:
+    """Engine version of the loop above. The first iteration processes the
+    whole prompt (the prefill fills the cache); every iteration after that
+    feeds ONE token through the model - the cache remembers the rest.
+    Compare the two loop bodies: that one-line difference in what gets fed
+    to model() is the entire milestone."""
+    cache = KVCache(model.config, batch_size=1, device=prompt_ids.device)
+    step_input = prompt_ids.unsqueeze(0)
+    step_times = []
+    with torch.no_grad():
+        for _ in range(new_tokens):
+            sync(device)
+            start = time.perf_counter()
+            logits = model(step_input, cache)
+            next_token = logits[:, -1, :].argmax(dim=-1, keepdim=True)
+            sync(device)
+            step_times.append(time.perf_counter() - start)
+            step_input = next_token
+            if next_token.item() == EOS_TOKEN_ID:
+                break
+    return step_times
+
+
 def tok_per_sec(step_times: list[float]) -> float:
     return round(len(step_times) / sum(step_times), 1)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--system", choices=["reference", "engine"], default="reference")
     parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
     parser.add_argument("--new-tokens", type=int, default=128)
     parser.add_argument("--repeats", type=int, default=3)
@@ -116,20 +141,30 @@ def main() -> None:
     args = parser.parse_args()
 
     device = pick_device()
-    model, config, metadata = load_reference_model(args.checkpoint, device)
     enc = tiktoken.get_encoding("gpt2")
-    prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
+
+    if args.system == "reference":
+        model, config, metadata = load_reference_model(args.checkpoint, device)
+        prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
+        prefill_once = lambda: model(prompt_ids.unsqueeze(0))
+        decode = lambda n: timed_greedy_decode(model, prompt_ids, device, n)
+        label = "reference (no KV cache)"
+    else:
+        model, config, metadata = load_engine_model(args.checkpoint, device)
+        prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
+        prefill_once = lambda: model(
+            prompt_ids.unsqueeze(0), KVCache(config, batch_size=1, device=device)
+        )
+        decode = lambda n: timed_greedy_decode_engine(model, prompt_ids, device, n)
+        label = "engine (KV cache)"
 
     # Warmup: the first pass on a fresh device pays one-time setup costs
     # (kernel compilation, memory allocator growth) that aren't steady-state.
-    timed_greedy_decode(model, prompt_ids, device, new_tokens=8)
+    decode(8)
 
-    prefill_s = time_prefill(model, prompt_ids, device, repeats=5)
+    prefill_s = time_prefill(prefill_once, device, repeats=5)
 
-    runs = [
-        timed_greedy_decode(model, prompt_ids, device, args.new_tokens)
-        for _ in range(args.repeats)
-    ]
+    runs = [decode(args.new_tokens) for _ in range(args.repeats)]
     runs.sort(key=sum)
     steps = runs[len(runs) // 2]  # the run with the median total time
 
@@ -140,7 +175,7 @@ def main() -> None:
     half = len(decode) // 2
 
     results = {
-        "system": "reference (no KV cache)",
+        "system": label,
         "device": device,
         "torch": torch.__version__,
         "machine": platform.machine(),

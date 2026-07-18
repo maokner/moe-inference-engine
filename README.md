@@ -75,8 +75,12 @@ uv venv -p 3.12 && uv pip install -e ".[server]"
 # prove the model generates on this machine
 uv run python scripts/smoke_generate.py
 
-# measure the baseline: prefill latency + decode tokens/sec
-uv run python benchmarks/bench.py
+# prove the engine computes the same thing as the reference
+uv run pytest tests/
+
+# measure both systems: prefill latency + decode tokens/sec
+uv run python benchmarks/bench.py --system reference
+uv run python benchmarks/bench.py --system engine
 
 # serve it over HTTP
 uv run python scripts/serve.py
@@ -86,6 +90,15 @@ curl -s localhost:8000/generate -H "Content-Type: application/json" \
 
 ## Status
 
-Milestone 1 in progress: baseline server and benchmark harness running on MacBook (MPS).
-First recorded floor for the reference no-KV-cache loop: **2.7 tok/s decode, 163ms prefill** - and decode decays from 3.7 tok/s (first 64 tokens) to 2.1 (next 64) because every step recomputes the whole sequence ([results/baseline_mps.json](results/baseline_mps.json)).
+Milestone 1 done, milestone 2 underway: the engine now has its own forward pass (hand-written attention, inference-only MoE dispatch) with a contiguous KV cache, parity-tested against the reference to identical greedy generations and logits within 1.3e-4.
+
+Numbers so far on MacBook (MPS), 62-token prompt, 128 generated:
+
+| system | decode tok/s | first half → second half | prefill |
+|---|---|---|---|
+| reference (no KV cache) | 2.7 | 3.7 → 2.1 (decays) | 163ms |
+| engine (KV cache) | **15.0** | 15.1 → 15.0 (flat) | 142ms |
+
+The reference decays because every step recomputes the whole sequence; the cache makes each step O(1) forwards, hence flat.
+Raw data: [results/](results/). Next: paged KV blocks, then continuous batching.
 See [moe-inference-engine.md](moe-inference-engine.md) for the full project plan, risks, and timeline.
