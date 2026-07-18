@@ -20,7 +20,12 @@ Measurement rules (each fixes a real bug in the first version of this file):
   prefill - so it is excluded from steady-state decode throughput.
 - The loop stops at EOS exactly like generate(), so throughput divides by
   tokens actually produced, not tokens requested.
-- Decode is repeated like prefill, and the median run is reported.
+- Decode is repeated, and reported numbers are per-position MEDIANS across
+  runs: greedy decode is deterministic, so position i is the same work every
+  run, and the median discards one-off stalls (a background process freezing
+  a single step for seconds) that would poison a wall-clock average.
+- Every raw step time from every run is preserved in the --output artifact,
+  so any statistic reported here can be recomputed - and challenged - later.
 
 Usage:
     uv run python benchmarks/bench.py
@@ -36,7 +41,6 @@ import tiktoken
 import torch
 
 from moe_engine.checkpoint import load_engine_model, load_reference_model
-from moe_engine.model import KVCache
 
 EOS_TOKEN_ID = 50256  # GPT-2 <|endoftext|>; the reference generate() stops on it too
 
@@ -110,7 +114,7 @@ def timed_greedy_decode_engine(model, prompt_ids, device: str, new_tokens: int) 
     feeds ONE token through the model - the cache remembers the rest.
     Compare the two loop bodies: that one-line difference in what gets fed
     to model() is the entire milestone."""
-    cache = KVCache(model.config, batch_size=1, device=prompt_ids.device)
+    cache = model.new_cache()
     step_input = prompt_ids.unsqueeze(0)
     step_times = []
     with torch.no_grad():
@@ -152,9 +156,7 @@ def main() -> None:
     else:
         model, config, metadata = load_engine_model(args.checkpoint, device)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
-        prefill_once = lambda: model(
-            prompt_ids.unsqueeze(0), KVCache(config, batch_size=1, device=device)
-        )
+        prefill_once = lambda: model(prompt_ids.unsqueeze(0), model.new_cache())
         decode = lambda n: timed_greedy_decode_engine(model, prompt_ids, device, n)
         label = "engine (KV cache)"
 
@@ -165,14 +167,15 @@ def main() -> None:
     prefill_s = time_prefill(prefill_once, device, repeats=5)
 
     runs = [decode(args.new_tokens) for _ in range(args.repeats)]
-    runs.sort(key=sum)
-    steps = runs[len(runs) // 2]  # the run with the median total time
 
-    # steps[0] processed the whole prompt (the prefill), so steady-state
-    # decode is everything after it. Splitting that in half shows the
-    # no-cache slowdown: the second half runs over a longer sequence.
-    decode = steps[1:]
-    half = len(decode) // 2
+    # steps[0] of each run processed the whole prompt (the prefill), so
+    # steady-state decode is everything after it. "typical" is the median
+    # time across runs at each position - a stall-free reconstruction of one
+    # run. Splitting it in half shows whether decode slows as context grows.
+    decode_runs = [steps[1:] for steps in runs]
+    typical = [sorted(times)[len(times) // 2] for times in zip(*decode_runs)]
+    pooled = sorted(t for steps in decode_runs for t in steps)
+    half = len(typical) // 2
 
     results = {
         "system": label,
@@ -182,16 +185,21 @@ def main() -> None:
         "checkpoint_step": metadata["step"],
         "prompt_tokens": len(prompt_ids),
         "requested_tokens": args.new_tokens,
-        "generated_tokens": len(steps),
+        "generated_tokens": min(len(steps) for steps in runs),
+        "repeats": args.repeats,
         "prefill_ms": round(prefill_s * 1000, 1),
-        "decode_tok_per_sec": tok_per_sec(decode),
-        "decode_tok_per_sec_first_half": tok_per_sec(decode[:half]),
-        "decode_tok_per_sec_second_half": tok_per_sec(decode[half:]),
+        "decode_median_ms": round(pooled[len(pooled) // 2] * 1000, 1),
+        "decode_p90_ms": round(pooled[int(len(pooled) * 0.9)] * 1000, 1),
+        "decode_tok_per_sec": tok_per_sec(typical),
+        "decode_tok_per_sec_first_half": tok_per_sec(typical[:half]),
+        "decode_tok_per_sec_second_half": tok_per_sec(typical[half:]),
     }
 
     print(json.dumps(results, indent=2))
     if args.output:
-        results["step_times_ms"] = [round(t * 1000, 2) for t in steps]
+        results["runs_step_times_ms"] = [
+            [round(t * 1000, 2) for t in steps] for steps in runs
+        ]
         with open(args.output, "w") as f:
             json.dump(results, f, indent=2)
 

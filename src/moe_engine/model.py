@@ -46,9 +46,13 @@ class KVCache:
     Preallocating a full max-length buffer per sequence is exactly the memory
     waste PagedAttention exists to fix - that is the next step of this
     milestone.
+
+    The cache dtype must match the model's activations (attention rejects
+    mixed-precision q/k/v), so prefer Model.new_cache(), which infers both
+    device and dtype from the weights.
     """
 
-    def __init__(self, config: ModelConfig, batch_size: int, device):
+    def __init__(self, config: ModelConfig, batch_size: int, device, dtype=torch.float32):
         head_dim = config.hidden_dim // config.num_heads
         shape = (
             config.num_layers,
@@ -57,8 +61,8 @@ class KVCache:
             config.max_seq_length,
             head_dim,
         )
-        self.k = torch.zeros(shape, device=device)
-        self.v = torch.zeros(shape, device=device)
+        self.k = torch.zeros(shape, device=device, dtype=dtype)
+        self.v = torch.zeros(shape, device=device, dtype=dtype)
         self.position = 0
 
 
@@ -136,16 +140,20 @@ class MoEFeedForward(nn.Module):
         batch, seq_len, dim = x.shape
         flat_x = x.reshape(-1, dim)
 
-        router_logits = self.router(flat_x)
-        topk_logits, topk_indices = torch.topk(router_logits, k=self.top_k, dim=-1)
-        topk_weights = F.softmax(topk_logits, dim=-1)
+        # The router runs in float32 even under autocast, like the reference
+        # (following ST-MoE): routing is a discrete choice, and low-precision
+        # rounding can flip which experts win.
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            router_logits = F.linear(flat_x.float(), self.router.weight.float())
+            topk_logits, topk_indices = torch.topk(router_logits, k=self.top_k, dim=-1)
+            topk_weights = F.softmax(topk_logits, dim=-1)
 
         out = torch.zeros_like(flat_x)
         for expert_id, expert in enumerate(self.experts):
             token_ids, slot = torch.where(topk_indices == expert_id)
             if token_ids.numel() == 0:
                 continue
-            weight = topk_weights[token_ids, slot].unsqueeze(-1)
+            weight = topk_weights[token_ids, slot].unsqueeze(-1).to(flat_x.dtype)
             out.index_add_(0, token_ids, weight * expert(flat_x[token_ids]))
         return out.reshape(batch, seq_len, dim)
 
@@ -181,6 +189,11 @@ class Model(nn.Module):
 
         self.output_projection.weight = self.token_embedding.weight  # tied, as in the reference
 
+    def new_cache(self, batch_size: int = 1) -> KVCache:
+        """A KVCache on this model's device with this model's dtype."""
+        weight = self.token_embedding.weight
+        return KVCache(self.config, batch_size, weight.device, weight.dtype)
+
     def forward(self, token_ids, cache: KVCache):
         batch, seq_len = token_ids.shape
         position = cache.position
@@ -200,12 +213,19 @@ class Model(nn.Module):
 
     @torch.no_grad()
     def generate(self, token_ids, max_new_tokens, temperature=1.0, top_k=None):
-        """Same sampling semantics as the reference generate() (including
-        returning without the EOS token), but after the prefill each step
-        feeds only the newest token through the model. Batch of 1 only."""
+        """Same sampling semantics and input handling as the reference
+        generate() (including returning without the EOS token), but after
+        the prefill each step feeds only the newest token through the model.
+        Batch of 1 only."""
+        if temperature < 0:
+            raise ValueError("temperature must be non-negative")
+        if top_k is not None and top_k <= 0:
+            raise ValueError("top_k must be positive")
+
         if token_ids.dim() == 1:
             token_ids = token_ids.unsqueeze(0)
-        cache = KVCache(self.config, batch_size=1, device=token_ids.device)
+        token_ids = token_ids.to(self.token_embedding.weight.device).long()
+        cache = self.new_cache(batch_size=1)
 
         x = token_ids
         step_input = token_ids

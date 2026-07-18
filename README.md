@@ -76,7 +76,8 @@ uv venv -p 3.12 && uv pip install -e ".[server]"
 uv run python scripts/smoke_generate.py
 
 # prove the engine computes the same thing as the reference
-uv run pytest tests/
+uv run pytest tests/                        # tiny random-weight configs
+uv run python scripts/check_parity.py       # the real 280M checkpoint
 
 # measure both systems: prefill latency + decode tokens/sec
 uv run python benchmarks/bench.py --system reference
@@ -90,15 +91,18 @@ curl -s localhost:8000/generate -H "Content-Type: application/json" \
 
 ## Status
 
-Milestone 1 done, milestone 2 underway: the engine now has its own forward pass (hand-written attention, inference-only MoE dispatch) with a contiguous KV cache, parity-tested against the reference to identical greedy generations and logits within 1.3e-4.
+Milestone 1 done, milestone 2 underway: the engine now has its own forward pass (hand-written attention, inference-only MoE dispatch) with a contiguous KV cache.
+Parity with the reference is reproducible from this repo: `pytest` covers the mechanism on tiny configs, and `scripts/check_parity.py` shows max logit diff 1.3e-4 and identical greedy generations on the real checkpoint ([results/parity_cpu.json](results/parity_cpu.json)).
 
-Numbers so far on MacBook (MPS), 62-token prompt, 128 generated:
+Numbers on MacBook (MPS), 62-token prompt, 128 generated.
+Reported figures are per-position median latencies across 3 runs (robust to one-off system stalls); every raw step time is preserved in [results/](results/) so any statistic can be recomputed.
 
-| system | decode tok/s | first half → second half | prefill |
-|---|---|---|---|
-| reference (no KV cache) | 2.7 | 3.7 → 2.1 (decays) | 163ms |
-| engine (KV cache) | **15.0** | 15.1 → 15.0 (flat) | 142ms |
+| system | decode tok/s | first half → second half | median / p90 latency | prefill |
+|---|---|---|---|---|
+| reference (no KV cache) | 2.7 | 3.3 → 2.3 (decays) | 258ms / 479ms | 139ms |
+| engine (KV cache) | **21.4** | 21.2 → 21.7 (flat) | 47ms / 53ms | 118ms |
 
-The reference decays because every step recomputes the whole sequence; the cache makes each step O(1) forwards, hence flat.
-Raw data: [results/](results/). Next: paged KV blocks, then continuous batching.
+The reference decays because every step recomputes the whole sequence.
+The cache reduces each decode step to one new transformer position; attention over cached history remains linear in context length, but at these context sizes the expert MLPs dominate, so the curve measures flat.
+Next: paged KV blocks, then continuous batching.
 See [moe-inference-engine.md](moe-inference-engine.md) for the full project plan, risks, and timeline.
