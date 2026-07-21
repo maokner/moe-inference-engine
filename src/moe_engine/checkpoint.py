@@ -1,10 +1,9 @@
-"""Load miniMoE ``.pt`` checkpoints into either model implementation.
+"""Load checkpoints into the engine or reference model.
 
 Checkpoint layout (produced by miniMoE's training loop):
     {"model": state_dict, "model_config": dict, "step": int, "tokens_seen": int}
 
-The same state_dict loads into the vendored reference model and the engine
-model: the engine deliberately uses identical parameter names.
+Both implementations use the same state-dict keys.
 """
 
 from __future__ import annotations

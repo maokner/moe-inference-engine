@@ -1,4 +1,4 @@
-"""Step 0: prove the model loads and generates on this machine.
+"""Load the reference checkpoint and generate text.
 
 Usage:
     uv run python scripts/smoke_generate.py

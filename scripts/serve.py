@@ -1,10 +1,4 @@
-"""Milestone 1 baseline server: the reference model behind a plain HTTP endpoint.
-
-Deliberately naive - this is the floor, not the engine:
-- one request at a time (a second request waits for the first to finish)
-- no KV cache, no batching, no streaming
-
-Every milestone after this one exists to fix something visible here.
+"""Serve the reference model through a synchronous HTTP endpoint.
 
 Usage:
     uv run python scripts/serve.py
@@ -39,7 +33,7 @@ class GenerateRequest(BaseModel):
 
 app = FastAPI(title="moe-engine baseline")
 enc = tiktoken.get_encoding("gpt2")
-model = None  # loaded in main() before the server starts
+model = None  # Initialized in main().
 device = pick_device()
 
 

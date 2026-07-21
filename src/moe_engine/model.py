@@ -1,18 +1,6 @@
-"""The engine's own miniMoE: same math, same weights, rewritten for inference.
+"""Inference-only miniMoE with a contiguous KV cache.
 
-Why the reference model can't be served fast: at every decode step it
-recomputes attention (and everything else) over the ENTIRE sequence so far.
-All of that work except the last position is identical to the previous step -
-the keys and values for old tokens never change. A KV cache stores them, so
-a decode step feeds ONE new token through the model instead of the history.
-
-The reference uses nn.MultiheadAttention, which gives no control over where
-keys/values live, so attention is implemented by hand here. Parameter names
-deliberately mirror the reference model - the unchanged checkpoint
-state_dict loads into either implementation - and tests/test_parity.py
-enforces that same weights + same input produce the same logits.
-
-Inference-only: no aux loss, no routing modes, no observers, no optimizer.
+Parameter names match the reference model for direct checkpoint loading.
 """
 
 from dataclasses import dataclass
@@ -30,26 +18,17 @@ class ModelConfig:
     vocab_size: int = 50304
     num_layers: int = 6
     hidden_dim: int = 768
-    moe_multiplier: float = 0.01  # training-only; kept so checkpoint configs load unchanged
+    moe_multiplier: float = 0.01  # Retained for checkpoint compatibility.
     num_experts: int = 8
     top_k: int = 2
-    num_heads: int = 8  # fixed in the reference architecture, not stored in checkpoints
+    num_heads: int = 8  # Fixed by the reference architecture.
 
 
 class KVCache:
-    """Preallocated K/V storage, shape [layer, batch, head, max_seq, head_dim].
+    """Contiguous K/V storage shaped [layer, batch, head, sequence, head_dim].
 
-    `position` counts tokens already cached. Each attention layer writes its
-    new keys/values at [position : position + T] and attends over everything
-    up to there; Model.forward advances position after all layers have run.
-
-    Preallocating a full max-length buffer per sequence is exactly the memory
-    waste PagedAttention exists to fix - that is the next step of this
-    milestone.
-
-    The cache dtype must match the model's activations (attention rejects
-    mixed-precision q/k/v), so prefer Model.new_cache(), which infers both
-    device and dtype from the weights.
+    `position` is the number of cached tokens. Use `Model.new_cache()` to
+    match the model's device and dtype.
     """
 
     def __init__(self, config: ModelConfig, batch_size: int, device, dtype=torch.float32):
@@ -67,12 +46,7 @@ class KVCache:
 
 
 class CachedAttention(nn.Module):
-    """Multi-head causal self-attention that reads/writes an external KV cache.
-
-    Parameters are laid out exactly like nn.MultiheadAttention - one stacked
-    in_proj holding Q, K, V and a separate out_proj - so reference
-    checkpoints load without any key remapping.
-    """
+    """Causal self-attention with external K/V storage."""
 
     def __init__(self, dim: int, num_heads: int):
         super().__init__()
@@ -97,9 +71,7 @@ class CachedAttention(nn.Module):
         keys = k_cache[:, :, : position + seq_len]
         values = v_cache[:, :, : position + seq_len]
 
-        # is_causal assumes query i sits at cache position i, which only holds
-        # when the cache starts empty (prefill). A decode step is one query
-        # that may attend to the whole cache, so it needs no mask at all.
+        # Prefill needs a mask; a single decode query can use the full cache.
         assert position == 0 or seq_len == 1, "prefill must start at position 0"
         out = F.scaled_dot_product_attention(q, keys, values, is_causal=seq_len > 1)
 
@@ -121,13 +93,7 @@ class Expert(nn.Module):
 
 
 class MoEFeedForward(nn.Module):
-    """Top-k routed feed-forward, inference-only.
-
-    Still the naive loop-over-experts formulation (gather each expert's
-    tokens, run them, scatter-add the results back). Fusing this dispatch
-    into a single kernel is the milestone 4 centerpiece; this loop is the
-    thing that kernel will be benchmarked against.
-    """
+    """Top-k expert routing with gather and scatter-add."""
 
     def __init__(self, dim, hidden_dim, num_experts, top_k):
         super().__init__()
@@ -140,9 +106,7 @@ class MoEFeedForward(nn.Module):
         batch, seq_len, dim = x.shape
         flat_x = x.reshape(-1, dim)
 
-        # The router runs in float32 even under autocast, like the reference
-        # (following ST-MoE): routing is a discrete choice, and low-precision
-        # rounding can flip which experts win.
+        # Keep routing decisions in float32.
         with torch.autocast(device_type=x.device.type, enabled=False):
             router_logits = F.linear(flat_x.float(), self.router.weight.float())
             topk_logits, topk_indices = torch.topk(router_logits, k=self.top_k, dim=-1)
@@ -187,10 +151,10 @@ class Model(nn.Module):
         )
         self.final_norm = nn.LayerNorm(config.hidden_dim)
 
-        self.output_projection.weight = self.token_embedding.weight  # tied, as in the reference
+        self.output_projection.weight = self.token_embedding.weight  # Weight tying.
 
     def new_cache(self, batch_size: int = 1) -> KVCache:
-        """A KVCache on this model's device with this model's dtype."""
+        """Create a cache matching the model's device and dtype."""
         weight = self.token_embedding.weight
         return KVCache(self.config, batch_size, weight.device, weight.dtype)
 
@@ -199,8 +163,7 @@ class Model(nn.Module):
         position = cache.position
         assert position + seq_len <= self.max_seq_length, "KV cache is full"
 
-        # With a cache, this forward only sees the NEW tokens, so their
-        # positions start where the cache left off, not at zero.
+        # New tokens start at the current cache position.
         pos = torch.arange(position, position + seq_len, device=token_ids.device)
         x = self.token_embedding(token_ids) + self.positional_embedding(pos)
 
@@ -213,10 +176,7 @@ class Model(nn.Module):
 
     @torch.no_grad()
     def generate(self, token_ids, max_new_tokens, temperature=1.0, top_k=None):
-        """Same sampling semantics and input handling as the reference
-        generate() (including returning without the EOS token), but after
-        the prefill each step feeds only the newest token through the model.
-        Batch of 1 only."""
+        """Generate one sequence with cached greedy or top-k sampling."""
         if temperature < 0:
             raise ValueError("temperature must be non-negative")
         if top_k is not None and top_k <= 0:

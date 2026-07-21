@@ -1,27 +1,20 @@
 # moe-inference-engine
 
-A from-scratch LLM inference engine that serves [miniMoE](https://github.com/maokner/miniMoE) (a 280M sparse Mixture-of-Experts model trained from scratch) fast.
-Custom Triton/CUDA kernels, paged KV cache, continuous batching, and quantization - benchmarked honestly against vLLM and llama.cpp.
+A from-scratch inference engine for [miniMoE](https://github.com/maokner/miniMoE), a 280M sparse Mixture-of-Experts model.
+The roadmap includes custom Triton/CUDA kernels, paged KV caching, continuous batching, and quantization.
 
 ## The big picture
 
-Plenty of people have written mini-vLLM clones for dense models; that alone is table stakes.
-The unclaimed part at portfolio scale is the **MoE forward path**: gating, top-2 routing, and grouped expert GEMMs without materializing padded per-expert batches.
-This is a known performance-critical kernel in vLLM and SGLang (`fused_moe`), and it is genuinely hard to get right.
-
-That fused MoE dispatch kernel is the headline of this project.
-Everything else - the paged KV cache, the continuous batching scheduler, quantization, CUDA graphs - is the credible engine built around it.
-
-The deliverable is numbers, not vibes: tokens/sec, time-to-first-token, and full throughput-latency curves against named baselines (HF `generate`, llama.cpp, vLLM) on named hardware.
+The main focus is the MoE forward path: gating, top-2 routing, and grouped expert GEMMs without padded per-expert batches.
+The engine will be compared with HF `generate`, llama.cpp, and vLLM using throughput, time-to-first-token, and latency curves.
 
 ## Components
 
-Built in this order, so the engine is already useful before the hardest piece lands:
+Planned build order:
 
 ### 1. Baseline server
 Plain PyTorch + HF-style generate loop serving miniMoE over HTTP.
-This is the floor every later speedup is measured against.
-Debugs fine on a MacBook with MPS - no GPU rental needed yet.
+This provides the reference baseline.
 
 ### 2. Paged KV cache
 Fixed-size KV blocks with a block table per sequence, so long and short requests share GPU memory without fragmentation.
@@ -29,41 +22,37 @@ Modeled on the PagedAttention design from vLLM.
 
 ### 3. Continuous batching
 Iteration-level scheduling: new requests join the running batch at any decode step, finished requests leave immediately.
-This is where most of the throughput lives.
 
-### 4. Fused MoE kernel (centerpiece)
+### 4. Fused MoE kernel
 Triton first, CUDA if needed: fuse gating + top-2 dispatch + grouped expert GEMM into one path, avoiding padded per-expert batches.
 Compared against the naive loop-over-experts implementation and against vLLM's `fused_moe`.
 
 ### 5. Quantization
 Int8, then int4 groupwise weight quantization for the experts.
-Quality cost (HellaSwag delta, perplexity delta) is reported next to the speed gain, not instead of it.
+Report HellaSwag and perplexity changes with performance results.
 
 ### 6. CUDA graphs
-Capture the decode step to kill kernel-launch overhead at small batch sizes.
+Capture decode to reduce launch overhead at small batch sizes.
 
 ### 7. Speculative decoding (stretch)
 A tiny dense draft model speculating for the MoE.
 Only if milestones 1-6 land cleanly.
 
-### 8. MLX port (the Apple angle)
+### 8. MLX port
 Port the quantized model to MLX and publish on-device tokens/sec from an M-series MacBook.
 
 ## Benchmark methodology
 
-Honest measurement is half the credibility of this project:
-
 - Same model, same weights, same prompts, same hardware for every system compared.
-- Baselines: HF transformers `generate` (floor), llama.cpp, vLLM (ceiling).
+- Baselines: HF transformers `generate`, llama.cpp, and vLLM.
 - Metrics: tokens/sec at batch 1, 8, 32; time-to-first-token; full throughput-latency curves, not single points.
 - One rented 4090 or A100; exact GPU, driver, and library versions reported.
 - The benchmark harness is published so every number regenerates with one command.
-- An explicit "where vLLM still beats this engine and why" section.
+- Document remaining performance gaps against vLLM.
 
 ## Why this project
 
-miniMoE means the model, tokenizer, and eval harness already exist, and I understand every layer of what the engine has to compute.
-"Trained a 280M MoE from scratch, then wrote the engine that serves it" is a full-stack story an interviewer can drill into at any level - from routing math down to memory hierarchy.
+miniMoE provides a known model, tokenizer, checkpoint, and evaluation harness for testing inference work from model math through memory management.
 
 ## Quickstart
 
@@ -72,14 +61,14 @@ Requires [uv](https://docs.astral.sh/uv/) and the miniMoE checkpoint (symlinked 
 ```bash
 uv venv -p 3.12 && uv pip install -e ".[server]"
 
-# prove the model generates on this machine
+# smoke test
 uv run python scripts/smoke_generate.py
 
-# prove the engine computes the same thing as the reference
-uv run pytest tests/                        # tiny random-weight configs
-uv run python scripts/check_parity.py       # the real 280M checkpoint
+# parity checks
+uv run pytest tests/
+uv run python scripts/check_parity.py
 
-# measure both systems: prefill latency + decode tokens/sec
+# benchmarks
 uv run python benchmarks/bench.py --system reference
 uv run python benchmarks/bench.py --system engine
 
@@ -95,7 +84,8 @@ Milestone 1 done, milestone 2 underway: the engine now has its own forward pass 
 Parity with the reference is reproducible from this repo: `pytest` covers the mechanism on tiny configs, and `scripts/check_parity.py` shows max logit diff 1.3e-4 and identical greedy generations on the real checkpoint ([results/parity_cpu.json](results/parity_cpu.json)).
 
 Numbers on MacBook (MPS), 62-token prompt, 128 generated.
-Reported figures are per-position median latencies across 3 runs (robust to one-off system stalls); every raw step time is preserved in [results/](results/) so any statistic can be recomputed.
+Reported figures use per-position median latencies across three runs.
+Raw step times are stored in [results/](results/).
 
 | system | decode tok/s | first half → second half | median / p90 latency | prefill |
 |---|---|---|---|---|

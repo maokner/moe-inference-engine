@@ -1,11 +1,4 @@
-"""Parity: the engine must produce the same numbers as the reference.
-
-Everything the engine will ever claim rests on this file: same weights +
-same input => same logits, so any speedup is pure engineering, not a
-quietly different model. Tests use a tiny random-weight config (fast, no
-checkpoint needed); the same state_dict is loaded into both
-implementations, which also proves the parameter names line up.
-"""
+"""Parity tests for the engine and reference model."""
 
 import pytest
 import torch
@@ -36,9 +29,7 @@ def test_full_forward_matches_reference():
 
 
 def test_cached_decode_matches_full_forward():
-    """The whole point of the cache: prefill 4 tokens, then feed the rest one
-    at a time. Each step's logits must equal the full-context forward at the
-    same position - if they don't, the cache is corrupting attention."""
+    """Cached token logits must match a full-context forward pass."""
     _, engine = make_models()
     ids = torch.randint(0, TINY["vocab_size"], (1, 16))
     with torch.no_grad():
@@ -61,8 +52,7 @@ def test_greedy_generation_matches_reference():
 
 
 def test_cache_follows_model_dtype():
-    """A converted model (here float64) must still decode: new_cache() has to
-    adopt the model's dtype, or attention rejects mixed-precision q/k/v."""
+    """Cache dtype must follow the model dtype."""
     _, engine = make_models()
     engine.double()
     ids = torch.randint(0, TINY["vocab_size"], (1, 8))
@@ -76,8 +66,7 @@ def test_cache_follows_model_dtype():
 
 
 def test_generate_validates_arguments():
-    """The reference rejects nonsense sampling arguments; the engine claims
-    the same semantics, so it must too."""
+    """Reject invalid sampling arguments."""
     _, engine = make_models()
     prompt = torch.randint(0, TINY["vocab_size"], (4,))
     with pytest.raises(ValueError):

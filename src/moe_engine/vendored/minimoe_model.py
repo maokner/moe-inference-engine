@@ -52,15 +52,13 @@ class MoEFeedForward(nn.Module):
         self.routing_observer = observer
 
     def forward(self, x, token_ids=None):
-        # x = [batch_size, sequence_length, input_dim]
         batch_size, seq_len, dim = x.shape
         num_tokens = batch_size * seq_len
 
-        # Router runs in float32 even under autocast: routing decisions and the
-        # aux loss are sensitive to bf16 rounding (ST-MoE keeps the router in fp32).
+        # Routing and its auxiliary loss use float32.
         with torch.autocast(device_type=x.device.type, enabled=False):
-            router_logits = self.router(x.float())  # [batch_size, sequence_length, num_experts]
-            router_probs = F.softmax(router_logits, dim=-1)  # [batch_size, sequence_length, num_experts]
+            router_logits = self.router(x.float())
+            router_probs = F.softmax(router_logits, dim=-1)
             if self.training and self.routing_mode != "learned_top2":
                 raise RuntimeError("Evaluation routing modes cannot be used while training")
 
@@ -102,24 +100,18 @@ class MoEFeedForward(nn.Module):
                 router_probs.detach(),
             )
 
-        flat_x = x.reshape(num_tokens, dim)  # [batch_size * sequence_length, input_dim]
+        flat_x = x.reshape(num_tokens, dim)
 
-        flat_topk_indices = topk_indices.reshape(
-            num_tokens, active_k
-        )  # [batch_size * sequence_length, active routes]
-        flat_topk_weights = topk_weights.reshape(
-            num_tokens, active_k
-        )  # [batch_size * sequence_length, active routes]
+        flat_topk_indices = topk_indices.reshape(num_tokens, active_k)
+        flat_topk_weights = topk_weights.reshape(num_tokens, active_k)
 
-        flat_output = torch.zeros_like(flat_x)  # [batch_size * sequence_length, input_dim]
+        flat_output = torch.zeros_like(flat_x)
 
         for expert_id, expert in enumerate(self.experts):
             selected = (flat_topk_indices == expert_id)
             token_ids, topk_slots = torch.where(selected)
 
-            # Run the expert even on zero tokens: skipping it would leave its
-            # parameters out of the autograd graph, which makes DDP with
-            # find_unused_parameters=False error out mid-training.
+            # Keep every expert in the DDP autograd graph.
             expert_input = flat_x[token_ids]
             expert_output = expert(expert_input)
             routing_weights = flat_topk_weights[token_ids, topk_slots].unsqueeze(-1)
@@ -131,7 +123,7 @@ class MoEFeedForward(nn.Module):
         load = selected_mask.sum(dim=2).mean(dim=(0, 1)) / active_k
         importance = router_probs.mean(dim=(0, 1))
         aux_loss = self.num_experts * torch.sum(load * importance)
-        output = flat_output.reshape(batch_size, seq_len, dim)  # [batch_size, sequence_length, input_dim]
+        output = flat_output.reshape(batch_size, seq_len, dim)
 
         return output, aux_loss
 
@@ -162,7 +154,7 @@ class TransformerMoEBlock(nn.Module):
             need_weights=False,
         )
 
-        x = x + attn_output  # Residual connection
+        x = x + attn_output
         moe_output, aux_loss = self.moe(self.moe_norm(x), token_ids=token_ids)
         x = x + moe_output
         return x, aux_loss
@@ -184,7 +176,7 @@ class Model(nn.Module):
         self.final_norm = nn.LayerNorm(config.hidden_dim)
         self.moe_multiplier = config.moe_multiplier
 
-        self.output_projection.weight = self.token_embedding.weight  # Tie weights
+        self.output_projection.weight = self.token_embedding.weight
 
         self.apply(self._init_weights)
 
@@ -197,13 +189,12 @@ class Model(nn.Module):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, x, y=None):
-        # X = [Batch size, Sequence length ] need to convert to [batch size, Sequence length, hidden_dim] for attention
         token_ids = x.long()
-        x = self.token_embedding(token_ids)  # [Batch size, Sequence length, hidden_dim]
+        x = self.token_embedding(token_ids)
         _, seq_len, _ = x.shape
         pos = torch.arange(seq_len, device=x.device)
 
-        x = x + self.positional_embedding(pos)  # [Batch size, Sequence length, hidden_dim]
+        x = x + self.positional_embedding(pos)
 
         causal_mask = make_causal_mask(seq_len, x.device)
         aux_losses = []
@@ -216,11 +207,7 @@ class Model(nn.Module):
         logits = self.output_projection(x)
 
         if y is not None:
-            # Sum-reduce and divide by the valid (non-ignored) token count instead
-            # of reduction="mean". This is numerically identical whenever any target
-            # is supervised, but returns 0 (not NaN) if a batch happens to be fully
-            # masked (all -100) - which can occur with prompt-masked SFT data. A NaN
-            # here would spread through the DDP all-reduce and destroy the run.
+            # Avoid NaN when every target is masked.
             flat_logits = logits.view(-1, logits.size(-1))
             flat_y = y.view(-1)
             cross_loss = F.cross_entropy(flat_logits, flat_y, reduction="sum")
@@ -303,10 +290,10 @@ class Model(nn.Module):
 
 @dataclass
 class ModelConfig:
-    max_seq_length: int = 1024  # max sequence length
-    vocab_size: int = 50304  # number of tokens: 50,000 BPE merges + 256 bytes tokens + 1 token
-    num_layers: int = 6  # number of transformer/MoE blocks
-    hidden_dim: int = 768  # embedding dimension
-    moe_multiplier: float = 0.01  # moe aux loss multiplier
-    num_experts: int = 8  # number of experts
-    top_k: int = 2  # number of top-k experts to select
+    max_seq_length: int = 1024
+    vocab_size: int = 50304
+    num_layers: int = 6
+    hidden_dim: int = 768
+    moe_multiplier: float = 0.01
+    num_experts: int = 8
+    top_k: int = 2

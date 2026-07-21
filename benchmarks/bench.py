@@ -1,31 +1,7 @@
-"""Milestone 1 benchmark harness: the numbers every later change is measured against.
+"""Benchmark prefill latency and greedy decode throughput.
 
-Two things get measured, because inference has two distinct phases:
-
-1. Prefill - one forward pass over the whole prompt. This bounds
-   time-to-first-token (TTFT), what a user feels as "lag before it starts".
-2. Decode - generating tokens one at a time. Steady-state tokens/sec,
-   what a user feels as "how fast it types".
-
-The reference model recomputes the ENTIRE context for every new token
-(no KV cache), so its decode cost grows with sequence length. That is
-exactly the flaw milestone 2 fixes - this harness exists to prove it.
-
-Measurement rules (each fixes a real bug in the first version of this file):
-- Decode is timed per token with our own greedy loop instead of timing
-  generate() as a black box. The loop does the same work, but per-token
-  times let us see decode slow down as the sequence grows, where a single
-  average would hide it.
-- The first decode step runs the model over the whole prompt - that IS the
-  prefill - so it is excluded from steady-state decode throughput.
-- The loop stops at EOS exactly like generate(), so throughput divides by
-  tokens actually produced, not tokens requested.
-- Decode is repeated, and reported numbers are per-position MEDIANS across
-  runs: greedy decode is deterministic, so position i is the same work every
-  run, and the median discards one-off stalls (a background process freezing
-  a single step for seconds) that would poison a wall-clock average.
-- Every raw step time from every run is preserved in the --output artifact,
-  so any statistic reported here can be recomputed - and challenged - later.
+Decode metrics exclude prefill and use per-position medians across
+deterministic runs. JSON output includes all raw step times.
 
 Usage:
     uv run python benchmarks/bench.py
@@ -42,9 +18,9 @@ import torch
 
 from moe_engine.checkpoint import load_engine_model, load_reference_model
 
-EOS_TOKEN_ID = 50256  # GPT-2 <|endoftext|>; the reference generate() stops on it too
+EOS_TOKEN_ID = 50256
 
-# A fixed prompt so every system we ever benchmark sees identical input.
+# Shared workload for both implementations.
 PROMPT = (
     "The mixture-of-experts architecture replaces the dense feed-forward "
     "layer of a transformer with a set of expert networks and a router. "
@@ -63,9 +39,7 @@ def pick_device() -> str:
 
 
 def sync(device: str) -> None:
-    # GPU work is asynchronous: python moves on while the device is still
-    # computing. Timing without a sync measures how fast we *queued* work,
-    # not how fast it ran.
+    # Device kernels are asynchronous.
     if device == "cuda":
         torch.cuda.synchronize()
     elif device == "mps":
@@ -73,7 +47,7 @@ def sync(device: str) -> None:
 
 
 def time_prefill(forward_once, device: str, repeats: int) -> float:
-    """Median seconds for one forward pass over the full prompt (~TTFT)."""
+    """Return median prefill time in seconds."""
     times = []
     with torch.no_grad():
         for _ in range(repeats):
@@ -86,12 +60,7 @@ def time_prefill(forward_once, device: str, repeats: int) -> float:
 
 
 def timed_greedy_decode(model, prompt_ids, device: str, new_tokens: int) -> list[float]:
-    """Greedy-decode up to new_tokens, returning seconds per generated token.
-
-    Same computation as the reference generate() at temperature=0 - full
-    recompute over the growing sequence each step - just with a stopwatch
-    around every token.
-    """
+    """Time reference-model greedy decode one token at a time."""
     x = prompt_ids.unsqueeze(0)
     step_times = []
     with torch.no_grad():
@@ -109,11 +78,7 @@ def timed_greedy_decode(model, prompt_ids, device: str, new_tokens: int) -> list
 
 
 def timed_greedy_decode_engine(model, prompt_ids, device: str, new_tokens: int) -> list[float]:
-    """Engine version of the loop above. The first iteration processes the
-    whole prompt (the prefill fills the cache); every iteration after that
-    feeds ONE token through the model - the cache remembers the rest.
-    Compare the two loop bodies: that one-line difference in what gets fed
-    to model() is the entire milestone."""
+    """Time cache-backed greedy decode one token at a time."""
     cache = model.new_cache()
     step_input = prompt_ids.unsqueeze(0)
     step_times = []
@@ -160,18 +125,14 @@ def main() -> None:
         decode = lambda n: timed_greedy_decode_engine(model, prompt_ids, device, n)
         label = "engine (KV cache)"
 
-    # Warmup: the first pass on a fresh device pays one-time setup costs
-    # (kernel compilation, memory allocator growth) that aren't steady-state.
+    # Warm up kernels and device allocations.
     decode(8)
 
     prefill_s = time_prefill(prefill_once, device, repeats=5)
 
     runs = [decode(args.new_tokens) for _ in range(args.repeats)]
 
-    # steps[0] of each run processed the whole prompt (the prefill), so
-    # steady-state decode is everything after it. "typical" is the median
-    # time across runs at each position - a stall-free reconstruction of one
-    # run. Splitting it in half shows whether decode slows as context grows.
+    # Exclude prefill, then take the median at each decode position.
     decode_runs = [steps[1:] for steps in runs]
     typical = [sorted(times)[len(times) // 2] for times in zip(*decode_runs)]
     pooled = sorted(t for steps in decode_runs for t in steps)

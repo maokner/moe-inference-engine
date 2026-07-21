@@ -1,17 +1,10 @@
-"""Reproduce the real-checkpoint parity claim: same weights, same numbers.
-
-The tiny random-weight tests in tests/test_parity.py prove the mechanism;
-this script proves it on the actual 280M checkpoint. It reports the maximum
-absolute and relative logit differences between the reference and the
-engine, and the first position (if any) where their greedy generations
-disagree.
+"""Compare engine and reference outputs on a checkpoint.
 
 Usage:
     uv run python scripts/check_parity.py
     uv run python scripts/check_parity.py --device mps --output results/parity_mps.json
 
-CPU is the default because it is deterministic; mps/cuda kernels are
-allowed to differ slightly more.
+CPU is the default for deterministic results.
 """
 
 import argparse
@@ -44,8 +37,7 @@ def main() -> None:
         engine_logits = engine(ids, engine.new_cache())
 
     abs_diff = (reference_logits - engine_logits).abs()
-    # Element-wise relative error explodes wherever a logit crosses zero, so
-    # measure against at-least-unit logit magnitude instead.
+    # Clamp the scale to avoid unstable ratios near zero.
     rel_diff = abs_diff / reference_logits.abs().clamp(min=1.0)
 
     reference_tokens = reference.generate(ids[0], args.new_tokens, temperature=0)[0].tolist()
