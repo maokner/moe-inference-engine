@@ -1,8 +1,9 @@
-"""Inference-only miniMoE with a contiguous KV cache.
+"""Inference-only miniMoE with external KV caches.
 
 Parameter names match the reference model for direct checkpoint loading.
 """
 
+import math
 from dataclasses import dataclass
 
 import torch
@@ -44,6 +45,108 @@ class KVCache:
         self.v = torch.zeros(shape, device=device, dtype=dtype)
         self.position = 0
 
+    def write(self, layer_idx, position, k, v):
+        seq_len = k.shape[2]
+        self.k[layer_idx, :, :, position : position + seq_len] = k
+        self.v[layer_idx, :, :, position : position + seq_len] = v
+
+    def read(self, layer_idx, length):
+        return self.k[layer_idx, :, :, :length], self.v[layer_idx, :, :, :length]
+
+
+class BlockAllocator:
+    """Shared K/V block storage for paged sequence caches."""
+
+    def __init__(
+        self,
+        config: ModelConfig,
+        num_blocks: int,
+        block_size: int,
+        device,
+        dtype=torch.float32,
+    ):
+        self.block_size = block_size
+        self.num_heads = config.num_heads
+        self.head_dim = config.hidden_dim // config.num_heads
+        shape = (
+            config.num_layers,
+            num_blocks,
+            config.num_heads,
+            block_size,
+            self.head_dim,
+        )
+        self.k_pool = torch.zeros(shape, device=device, dtype=dtype)
+        self.v_pool = torch.zeros(shape, device=device, dtype=dtype)
+        self.free_blocks = list(range(num_blocks))
+
+    def allocate(self) -> int:
+        if not self.free_blocks:
+            raise RuntimeError("no free KV cache blocks left")
+        return self.free_blocks.pop()
+
+    def free(self, block_ids: list[int]) -> None:
+        self.free_blocks.extend(block_ids)
+
+    def new_cache(self) -> "PagedKVCache":
+        return PagedKVCache(self)
+
+
+class PagedKVCache:
+    """Per-sequence K/V cache backed by blocks from a shared allocator."""
+
+    def __init__(self, allocator: BlockAllocator):
+        self.allocator = allocator
+        self.block_table: list[int] = []
+        self.position = 0
+
+    def _reserve(self, num_tokens: int) -> None:
+        """Reserve enough blocks for `num_tokens` without partial allocation."""
+        blocks_needed = -(-num_tokens // self.allocator.block_size)
+        taken: list[int] = []
+        try:
+            while len(self.block_table) + len(taken) < blocks_needed:
+                taken.append(self.allocator.allocate())
+        except RuntimeError:
+            self.allocator.free(taken)
+            raise
+        self.block_table.extend(taken)
+
+    def _block_for(self, token_pos: int) -> tuple[int, int]:
+        block_size = self.allocator.block_size
+        return self.block_table[token_pos // block_size], token_pos % block_size
+
+    def write(self, layer_idx, position, k, v):
+        # Each cache has one block table and represents one sequence.
+        if k.shape[0] != 1:
+            raise ValueError("PagedKVCache holds one sequence; use batch size 1")
+        seq_len = k.shape[2]
+        self._reserve(position + seq_len)
+        for offset in range(seq_len):
+            block_id, slot = self._block_for(position + offset)
+            self.allocator.k_pool[layer_idx, block_id, :, slot] = k[0, :, offset]
+            self.allocator.v_pool[layer_idx, block_id, :, slot] = v[0, :, offset]
+
+    def read(self, layer_idx, length):
+        block_size = self.allocator.block_size
+        num_blocks = -(-length // block_size)
+        block_ids = self.block_table[:num_blocks]
+
+        def read_pool(pool):
+            return (
+                pool[layer_idx, block_ids]
+                .transpose(0, 1)
+                .reshape(self.allocator.num_heads, -1, self.allocator.head_dim)[:, :length]
+                .unsqueeze(0)
+            )
+
+        return read_pool(self.allocator.k_pool), read_pool(self.allocator.v_pool)
+
+    def free(self):
+        """Return all blocks and reset the cache."""
+        self.allocator.free(self.block_table)
+        self.block_table = []
+        self.position = 0
+
 
 class CachedAttention(nn.Module):
     """Causal self-attention with external K/V storage."""
@@ -56,7 +159,7 @@ class CachedAttention(nn.Module):
         self.in_proj_bias = nn.Parameter(torch.empty(3 * dim))
         self.out_proj = nn.Linear(dim, dim)
 
-    def forward(self, x, k_cache, v_cache, position: int):
+    def forward(self, x, cache, layer_idx, position: int):
         batch, seq_len, dim = x.shape
         q, k, v = F.linear(x, self.in_proj_weight, self.in_proj_bias).chunk(3, dim=-1)
 
@@ -66,10 +169,8 @@ class CachedAttention(nn.Module):
 
         q, k, v = split_heads(q), split_heads(k), split_heads(v)
 
-        k_cache[:, :, position : position + seq_len] = k
-        v_cache[:, :, position : position + seq_len] = v
-        keys = k_cache[:, :, : position + seq_len]
-        values = v_cache[:, :, : position + seq_len]
+        cache.write(layer_idx, position, k, v)
+        keys, values = cache.read(layer_idx, position + seq_len)
 
         # Prefill needs a mask; a single decode query can use the full cache.
         assert position == 0 or seq_len == 1, "prefill must start at position 0"
@@ -132,8 +233,8 @@ class TransformerMoEBlock(nn.Module):
         self.attn_norm = nn.LayerNorm(config.hidden_dim)
         self.moe_norm = nn.LayerNorm(config.hidden_dim)
 
-    def forward(self, x, k_cache, v_cache, position):
-        x = x + self.attention(self.attn_norm(x), k_cache, v_cache, position)
+    def forward(self, x, cache, layer_idx, position):
+        x = x + self.attention(self.attn_norm(x), cache, layer_idx, position)
         x = x + self.moe(self.moe_norm(x))
         return x
 
@@ -158,7 +259,13 @@ class Model(nn.Module):
         weight = self.token_embedding.weight
         return KVCache(self.config, batch_size, weight.device, weight.dtype)
 
-    def forward(self, token_ids, cache: KVCache):
+    def new_block_allocator(self, num_blocks: int, block_size: int = 16) -> BlockAllocator:
+        """Create a block pool matching the model's device and dtype."""
+        weight = self.token_embedding.weight
+        return BlockAllocator(self.config, num_blocks, block_size, weight.device, weight.dtype)
+
+    def forward(self, token_ids, cache):
+        """Run a forward pass using a contiguous or paged cache."""
         batch, seq_len = token_ids.shape
         position = cache.position
         assert position + seq_len <= self.max_seq_length, "KV cache is full"
@@ -168,24 +275,38 @@ class Model(nn.Module):
         x = self.token_embedding(token_ids) + self.positional_embedding(pos)
 
         for i, block in enumerate(self.MoEBlocks):
-            x = block(x, cache.k[i], cache.v[i], position)
+            x = block(x, cache, i, position)
         cache.position += seq_len
 
         x = self.final_norm(x)
         return self.output_projection(x)
 
     @torch.no_grad()
-    def generate(self, token_ids, max_new_tokens, temperature=1.0, top_k=None):
-        """Generate one sequence with cached greedy or top-k sampling."""
-        if temperature < 0:
-            raise ValueError("temperature must be non-negative")
+    def generate(self, token_ids, max_new_tokens, temperature=1.0, top_k=None, cache=None):
+        """Generate one sequence. The caller owns any supplied cache."""
+        if not math.isfinite(temperature) or temperature < 0:
+            raise ValueError("temperature must be a finite non-negative number")
         if top_k is not None and top_k <= 0:
             raise ValueError("top_k must be positive")
+        if max_new_tokens < 1:
+            raise ValueError("max_new_tokens must be at least 1")
 
         if token_ids.dim() == 1:
             token_ids = token_ids.unsqueeze(0)
         token_ids = token_ids.to(self.token_embedding.weight.device).long()
-        cache = self.new_cache(batch_size=1)
+        if token_ids.shape[0] != 1:
+            raise ValueError("generate() handles one sequence; use batch size 1")
+        if token_ids.shape[1] == 0:
+            raise ValueError("prompt must contain at least one token")
+        if token_ids.shape[1] > self.max_seq_length:
+            raise ValueError(
+                f"prompt is {token_ids.shape[1]} tokens; max_seq_length is {self.max_seq_length}"
+            )
+        if cache is None:
+            cache = self.new_cache(batch_size=1)
+        # Reject used caches before a forward pass can mutate them.
+        if cache.position != 0:
+            raise ValueError("generate() needs a fresh cache")
 
         x = token_ids
         step_input = token_ids
@@ -208,4 +329,6 @@ class Model(nn.Module):
                 return x
             x = torch.cat((x, next_token), dim=1)
             step_input = next_token
+            if cache.position >= self.max_seq_length:
+                break  # The sampled token has not entered the cache.
         return x

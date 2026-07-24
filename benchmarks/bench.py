@@ -46,16 +46,19 @@ def sync(device: str) -> None:
         torch.mps.synchronize()
 
 
-def time_prefill(forward_once, device: str, repeats: int) -> float:
-    """Return median prefill time in seconds."""
+def time_prefill(make_cache, forward, device: str, repeats: int, cleanup=None) -> float:
+    """Return median forward-only prefill time in seconds."""
     times = []
     with torch.no_grad():
         for _ in range(repeats):
+            cache = make_cache()
             sync(device)
             start = time.perf_counter()
-            forward_once()
+            forward(cache)
             sync(device)
             times.append(time.perf_counter() - start)
+            if cleanup is not None:
+                cleanup(cache)
     return sorted(times)[len(times) // 2]
 
 
@@ -77,9 +80,10 @@ def timed_greedy_decode(model, prompt_ids, device: str, new_tokens: int) -> list
     return step_times
 
 
-def timed_greedy_decode_engine(model, prompt_ids, device: str, new_tokens: int) -> list[float]:
+def timed_greedy_decode_engine(model, prompt_ids, device: str, new_tokens: int, cache=None) -> list[float]:
     """Time cache-backed greedy decode one token at a time."""
-    cache = model.new_cache()
+    if cache is None:
+        cache = model.new_cache()
     step_input = prompt_ids.unsqueeze(0)
     step_times = []
     with torch.no_grad():
@@ -102,33 +106,71 @@ def tok_per_sec(step_times: list[float]) -> float:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--system", choices=["reference", "engine"], default="reference")
+    parser.add_argument(
+        "--system", choices=["reference", "engine", "engine-paged"], default="reference"
+    )
     parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
     parser.add_argument("--new-tokens", type=int, default=128)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--output", help="also write results (with per-token times) to this JSON file")
     args = parser.parse_args()
+    if args.new_tokens < 2:
+        parser.error("--new-tokens must be at least 2 (the first step is excluded as prefill)")
+    if args.repeats < 1:
+        parser.error("--repeats must be at least 1")
 
     device = pick_device()
     enc = tiktoken.get_encoding("gpt2")
 
+    kv_config = {}
     if args.system == "reference":
         model, config, metadata = load_reference_model(args.checkpoint, device)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
-        prefill_once = lambda: model(prompt_ids.unsqueeze(0))
+        make_cache, cleanup = lambda: None, None
+        prefill = lambda _: model(prompt_ids.unsqueeze(0))
         decode = lambda n: timed_greedy_decode(model, prompt_ids, device, n)
         label = "reference (no KV cache)"
+    elif args.system == "engine":
+        model, config, metadata = load_engine_model(args.checkpoint, device)
+        prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
+        make_cache, cleanup = model.new_cache, None
+        prefill = lambda cache: model(prompt_ids.unsqueeze(0), cache)
+        decode = lambda n: timed_greedy_decode_engine(model, prompt_ids, device, n)
+        label = "engine (KV cache)"
     else:
         model, config, metadata = load_engine_model(args.checkpoint, device)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
-        prefill_once = lambda: model(prompt_ids.unsqueeze(0), model.new_cache())
-        decode = lambda n: timed_greedy_decode_engine(model, prompt_ids, device, n)
-        label = "engine (KV cache)"
+        # Match the server's one-sequence pool.
+        block_size = 16
+        num_blocks = -(-model.max_seq_length // block_size)
+        allocator = model.new_block_allocator(num_blocks=num_blocks, block_size=block_size)
+        pool_bytes = 2 * allocator.k_pool.numel() * allocator.k_pool.element_size()
+        kv_config = {
+            "kv_block_size": block_size,
+            "kv_num_blocks": num_blocks,
+            "kv_pool_mb": round(pool_bytes / 2**20, 1),
+        }
+
+        def decode(n):
+            cache = allocator.new_cache()
+            try:
+                return timed_greedy_decode_engine(
+                    model, prompt_ids, device, n, cache=cache
+                )
+            finally:
+                cache.free()
+
+        def cleanup(cache):
+            cache.free()
+
+        make_cache = allocator.new_cache
+        prefill = lambda cache: model(prompt_ids.unsqueeze(0), cache)
+        label = "engine (paged KV cache)"
 
     # Warm up kernels and device allocations.
     decode(8)
 
-    prefill_s = time_prefill(prefill_once, device, repeats=5)
+    prefill_s = time_prefill(make_cache, prefill, device, repeats=5, cleanup=cleanup)
 
     runs = [decode(args.new_tokens) for _ in range(args.repeats)]
 
@@ -136,6 +178,8 @@ def main() -> None:
     decode_runs = [steps[1:] for steps in runs]
     typical = [sorted(times)[len(times) // 2] for times in zip(*decode_runs)]
     pooled = sorted(t for steps in decode_runs for t in steps)
+    if not pooled:
+        raise SystemExit("no decode steps to aggregate: every run hit EOS on its first token")
     half = len(typical) // 2
 
     results = {
@@ -154,6 +198,7 @@ def main() -> None:
         "decode_tok_per_sec": tok_per_sec(typical),
         "decode_tok_per_sec_first_half": tok_per_sec(typical[:half]),
         "decode_tok_per_sec_second_half": tok_per_sec(typical[half:]),
+        **kv_config,
     }
 
     print(json.dumps(results, indent=2))

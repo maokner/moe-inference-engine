@@ -59,7 +59,7 @@ miniMoE provides a known model, tokenizer, checkpoint, and evaluation harness fo
 Requires [uv](https://docs.astral.sh/uv/) and the miniMoE checkpoint (symlinked or copied into `checkpoints/`).
 
 ```bash
-uv venv -p 3.12 && uv pip install -e ".[server]"
+uv venv -p 3.12 && uv pip install -e ".[server,dev]"
 
 # smoke test
 uv run python scripts/smoke_generate.py
@@ -71,6 +71,7 @@ uv run python scripts/check_parity.py
 # benchmarks
 uv run python benchmarks/bench.py --system reference
 uv run python benchmarks/bench.py --system engine
+uv run python benchmarks/bench.py --system engine-paged
 
 # serve it over HTTP
 uv run python scripts/serve.py
@@ -80,19 +81,32 @@ curl -s localhost:8000/generate -H "Content-Type: application/json" \
 
 ## Status
 
-Milestone 1 done, milestone 2 underway: the engine now has its own forward pass (hand-written attention, inference-only MoE dispatch) with a contiguous KV cache.
-Parity with the reference is reproducible from this repo: `pytest` covers the mechanism on tiny configs, and `scripts/check_parity.py` shows max logit diff 1.3e-4 and identical greedy generations on the real checkpoint ([results/parity_cpu.json](results/parity_cpu.json)).
+Milestone 1 is complete and milestone 2 is underway.
+The engine has a custom forward pass, a contiguous KV cache used by `generate()`, and a paged KV cache backed by a shared block pool.
+Both cache implementations expose the same `write` and `read` interface to `CachedAttention`.
+The HTTP server creates a `PagedKVCache` for each request and returns its blocks afterward.
+Requests are serialized because the current pool holds one maximum-length sequence.
+The server rejects over-length prompts and stops generation when the context window fills.
+`pytest` checks both cache implementations on tiny configurations, including two sequences sharing one block pool.
+On the real checkpoint, `scripts/check_parity.py` reports a maximum logit difference of 1.3e-4 and identical greedy generations ([results/parity_cpu.json](results/parity_cpu.json)).
 
 Numbers on MacBook (MPS), 62-token prompt, 128 generated.
-Reported figures use per-position median latencies across three runs.
+All three rows come from one back-to-back session at the same revision because MPS throughput varies between sessions.
+Each row uses per-position median latencies across three runs.
+Prefill times cover only the forward pass; cache allocation happens outside the timed region.
 Raw step times are stored in [results/](results/).
 
 | system | decode tok/s | first half → second half | median / p90 latency | prefill |
 |---|---|---|---|---|
-| reference (no KV cache) | 2.7 | 3.3 → 2.3 (decays) | 258ms / 479ms | 139ms |
-| engine (KV cache) | **21.4** | 21.2 → 21.7 (flat) | 47ms / 53ms | 118ms |
+| reference (no KV cache) | 2.5 | 2.8 → 2.2 (decays) | 258ms / 431ms | 193ms |
+| engine (KV cache) | **18.3** | 18.5 → 18.1 (flat) | 57ms / 63ms | 165ms |
+| engine (paged KV cache) | 14.1 | 14.6 → 13.6 (flat) | 73ms / 82ms | 177ms |
 
 The reference decays because every step recomputes the whole sequence.
 The cache reduces each decode step to one new transformer position; attention over cached history remains linear in context length, but at these context sizes the expert MLPs dominate, so the curve measures flat.
-Next: paged KV blocks, then continuous batching.
+The paged cache is about 23% slower during decode because `read()` gathers blocks into a contiguous tensor at every layer and step.
+The shared pool reserves 36 MB of K/V storage for 1024 tokens.
+The 190-token benchmark workload uses 12 of 64 blocks, or about 6.8 MB, while a contiguous cache reserves the full 36 MB for each sequence.
+The current benchmark measures one sequence and does not measure mixed-length sharing across concurrent sequences.
+Next: continuous batching, then the fused MoE kernel.
 See [moe-inference-engine.md](moe-inference-engine.md) for the full project plan, risks, and timeline.
