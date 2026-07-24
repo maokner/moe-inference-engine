@@ -126,16 +126,29 @@ def main() -> None:
     if args.system == "reference":
         model, config, metadata = load_reference_model(args.checkpoint, device)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
-        make_cache, cleanup = lambda: None, None
-        prefill = lambda _: model(prompt_ids.unsqueeze(0))
-        decode = lambda n: timed_greedy_decode(model, prompt_ids, device, n)
+        cleanup = None
+
+        def make_cache():
+            return None
+
+        def prefill(_):
+            return model(prompt_ids.unsqueeze(0))
+
+        def decode(n):
+            return timed_greedy_decode(model, prompt_ids, device, n)
+
         label = "reference (no KV cache)"
     elif args.system == "engine":
         model, config, metadata = load_engine_model(args.checkpoint, device)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
         make_cache, cleanup = model.new_cache, None
-        prefill = lambda cache: model(prompt_ids.unsqueeze(0), cache)
-        decode = lambda n: timed_greedy_decode_engine(model, prompt_ids, device, n)
+
+        def prefill(cache):
+            return model(prompt_ids.unsqueeze(0), cache)
+
+        def decode(n):
+            return timed_greedy_decode_engine(model, prompt_ids, device, n)
+
         label = "engine (KV cache)"
     else:
         model, config, metadata = load_engine_model(args.checkpoint, device)
@@ -164,7 +177,10 @@ def main() -> None:
             cache.free()
 
         make_cache = allocator.new_cache
-        prefill = lambda cache: model(prompt_ids.unsqueeze(0), cache)
+
+        def prefill(cache):
+            return model(prompt_ids.unsqueeze(0), cache)
+
         label = "engine (paged KV cache)"
 
     # Warm up kernels and device allocations.

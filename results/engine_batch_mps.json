@@ -1,0 +1,39 @@
+{
+  "system": "engine (continuous batching)",
+  "device": "mps",
+  "torch": "2.13.0",
+  "machine": "arm64",
+  "checkpoint_step": 6358,
+  "prompt_tokens": 62,
+  "requested_tokens": 128,
+  "runs": [
+    {
+      "batch_size": 1,
+      "total_tokens": 128,
+      "wall_s": 9.99,
+      "aggregate_tok_per_sec": 12.8,
+      "per_seq_tok_per_sec": 12.8
+    },
+    {
+      "batch_size": 2,
+      "total_tokens": 256,
+      "wall_s": 12.43,
+      "aggregate_tok_per_sec": 20.6,
+      "per_seq_tok_per_sec": 10.3
+    },
+    {
+      "batch_size": 4,
+      "total_tokens": 512,
+      "wall_s": 17.03,
+      "aggregate_tok_per_sec": 30.1,
+      "per_seq_tok_per_sec": 7.5
+    },
+    {
+      "batch_size": 8,
+      "total_tokens": 1024,
+      "wall_s": 27.1,
+      "aggregate_tok_per_sec": 37.8,
+      "per_seq_tok_per_sec": 4.7
+    }
+  ]
+}

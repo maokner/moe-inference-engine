@@ -1,0 +1,32 @@
+{
+  "system": "engine (continuous batching)",
+  "device": "cuda",
+  "torch": "2.13.0+cu130",
+  "machine": "x86_64",
+  "checkpoint_step": 6358,
+  "prompt_tokens": 62,
+  "requested_tokens": 128,
+  "runs": [
+    {
+      "batch_size": 1,
+      "total_tokens": 128,
+      "wall_s": 7.27,
+      "aggregate_tok_per_sec": 17.6,
+      "per_seq_tok_per_sec": 17.6
+    },
+    {
+      "batch_size": 8,
+      "total_tokens": 1024,
+      "wall_s": 10.54,
+      "aggregate_tok_per_sec": 97.1,
+      "per_seq_tok_per_sec": 12.1
+    },
+    {
+      "batch_size": 32,
+      "total_tokens": 4096,
+      "wall_s": 27.65,
+      "aggregate_tok_per_sec": 148.1,
+      "per_seq_tok_per_sec": 4.6
+    }
+  ]
+}
