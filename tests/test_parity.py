@@ -187,6 +187,16 @@ def test_paged_cache_follows_model_dtype():
     torch.testing.assert_close(step[:, -1], full[:, 4], atol=1e-4, rtol=1e-4)
 
 
+def test_stacked_expert_cache_invalidated_on_reload():
+    """Reloading weights must clear the fused path's stacked copy."""
+    _, engine = make_models()
+    moe = engine.MoEBlocks[0].moe
+    moe._stacked_experts()
+    assert moe._stacked is not None
+    engine.load_state_dict(engine.state_dict())
+    assert moe._stacked is None  # A stale copy would silently serve old weights.
+
+
 def test_generate_validates_arguments():
     """Reject invalid sampling arguments."""
     _, engine = make_models()

@@ -1,6 +1,6 @@
 {
   "system": "engine (continuous batching)",
-  "moe_path": "fused",
+  "moe_path": "loop",
   "device": "cuda",
   "torch": "2.13.0+cu130",
   "machine": "x86_64",
@@ -11,23 +11,23 @@
     {
       "batch_size": 1,
       "total_tokens": 128,
-      "wall_s": 4.21,
-      "aggregate_tok_per_sec": 30.4,
-      "per_seq_tok_per_sec": 30.4
+      "wall_s": 6.31,
+      "aggregate_tok_per_sec": 20.3,
+      "per_seq_tok_per_sec": 20.3
     },
     {
       "batch_size": 8,
       "total_tokens": 1024,
-      "wall_s": 9.34,
-      "aggregate_tok_per_sec": 109.6,
-      "per_seq_tok_per_sec": 13.7
+      "wall_s": 11.15,
+      "aggregate_tok_per_sec": 91.8,
+      "per_seq_tok_per_sec": 11.5
     },
     {
       "batch_size": 32,
       "total_tokens": 4096,
-      "wall_s": 26.36,
-      "aggregate_tok_per_sec": 155.4,
-      "per_seq_tok_per_sec": 4.9
+      "wall_s": 29.93,
+      "aggregate_tok_per_sec": 136.9,
+      "per_seq_tok_per_sec": 4.3
     }
   ]
 }

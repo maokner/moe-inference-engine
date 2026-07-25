@@ -10,6 +10,11 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+try:
+    from moe_engine.fused_moe import fused_moe
+except ImportError:  # Triton is CUDA-only; the expert loop covers CPU/MPS.
+    fused_moe = None
+
 EOS_TOKEN_ID = 50256
 
 
@@ -203,8 +208,8 @@ class CachedAttention(nn.Module):
 
         The projections run batched, but attention runs per sequence: each
         cache holds a different-length history in different pool blocks, so
-        there is no single rectangular K/V tensor to attend over. The
-        milestone-4 paged attention kernel replaces this Python loop.
+        there is no single rectangular K/V tensor to attend over. A future
+        paged-attention kernel replaces this Python loop.
         """
         batch, seq_len, dim = x.shape  # seq_len is always 1 during decode.
         q, k, v = F.linear(x, self.in_proj_weight, self.in_proj_bias).chunk(3, dim=-1)
@@ -247,6 +252,30 @@ class MoEFeedForward(nn.Module):
         self.num_experts = num_experts
         self.experts = nn.ModuleList(Expert(dim, hidden_dim) for _ in range(num_experts))
         self.router = nn.Linear(dim, num_experts, bias=False)
+        self.fused_enabled = True  # Benchmarks flip this to compare paths.
+        self._stacked = None
+        # Reloading weights must drop the stacked copy, or the fused path
+        # would silently keep serving the old parameters.
+        self._register_load_state_dict_pre_hook(self._clear_stacked)
+
+    def _clear_stacked(self, *args):
+        self._stacked = None
+
+    def _stacked_experts(self):
+        """Stack expert weights once for the fused kernel.
+
+        Built lazily on the first fused forward so it runs after checkpoint
+        loading and device placement. This duplicates the expert weights,
+        which are most of the model (about 900 MB for the real checkpoint).
+        """
+        if self._stacked is None:
+            self._stacked = (
+                torch.stack([e.net[0].weight for e in self.experts]),
+                torch.stack([e.net[0].bias for e in self.experts]),
+                torch.stack([e.net[2].weight for e in self.experts]),
+                torch.stack([e.net[2].bias for e in self.experts]),
+            )
+        return self._stacked
 
     def forward(self, x):
         batch, seq_len, dim = x.shape
@@ -257,6 +286,10 @@ class MoEFeedForward(nn.Module):
             router_logits = F.linear(flat_x.float(), self.router.weight.float())
             topk_logits, topk_indices = torch.topk(router_logits, k=self.top_k, dim=-1)
             topk_weights = F.softmax(topk_logits, dim=-1)
+
+        if fused_moe is not None and self.fused_enabled and flat_x.is_cuda:
+            out = fused_moe(flat_x, *self._stacked_experts(), topk_weights, topk_indices)
+            return out.reshape(batch, seq_len, dim)
 
         out = torch.zeros_like(flat_x)
         for expert_id, expert in enumerate(self.experts):

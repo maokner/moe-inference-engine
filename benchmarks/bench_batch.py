@@ -64,6 +64,8 @@ def main() -> None:
     parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
     parser.add_argument("--batch-sizes", default="1,8,32")
     parser.add_argument("--new-tokens", type=int, default=128)
+    parser.add_argument("--moe", choices=["fused", "loop"], default="fused",
+                        help="fused Triton kernel (CUDA default) or the expert loop")
     parser.add_argument("--output", help="also write results to this JSON file")
     args = parser.parse_args()
     batch_sizes = [int(n) for n in args.batch_sizes.split(",")]
@@ -75,6 +77,9 @@ def main() -> None:
     device = pick_device()
     enc = tiktoken.get_encoding("gpt2")
     model, _, metadata = load_engine_model(args.checkpoint, device)
+    if args.moe == "loop":
+        for block in model.MoEBlocks:
+            block.moe.fused_enabled = False
     prompt_ids = enc.encode(PROMPT)
 
     with torch.no_grad():
@@ -85,6 +90,7 @@ def main() -> None:
 
     results = {
         "system": "engine (continuous batching)",
+        "moe_path": args.moe,
         "device": device,
         "torch": torch.__version__,
         "machine": platform.machine(),
