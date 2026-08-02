@@ -1,7 +1,7 @@
 [project]
 name = "moe-engine"
 version = "0.1.0"
-description = "From-scratch inference engine serving miniMoE: paged KV cache, continuous batching, fused MoE kernels."
+description = "From-scratch miniMoE inference focused on paged KV caching and single-request latency."
 requires-python = ">=3.12"
 dependencies = [
     "torch>=2.5",

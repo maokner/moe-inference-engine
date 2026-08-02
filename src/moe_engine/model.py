@@ -10,25 +10,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-try:
-    from moe_engine.fused_moe import fused_moe
-except ImportError:  # Triton is CUDA-only; the expert loop covers CPU/MPS.
-    fused_moe = None
-
 EOS_TOKEN_ID = 50256
-
-
-def sample_next_token(logits, temperature, top_k):
-    """Pick the next token id from last-position logits shaped [batch, vocab]."""
-    if temperature == 0:
-        return torch.argmax(logits, dim=-1, keepdim=True)
-    logits = logits / temperature
-    if top_k is not None:
-        k = min(top_k, logits.size(-1))
-        values, _ = torch.topk(logits, k)
-        logits = logits.masked_fill(logits < values[:, [-1]], -float("inf"))
-    probs = F.softmax(logits, dim=-1)
-    return torch.multinomial(probs, num_samples=1)
 
 
 @dataclass
@@ -95,7 +77,6 @@ class BlockAllocator:
         )
         self.k_pool = torch.zeros(shape, device=device, dtype=dtype)
         self.v_pool = torch.zeros(shape, device=device, dtype=dtype)
-        self.num_blocks = num_blocks
         self.free_blocks = list(range(num_blocks))
 
     def allocate(self) -> int:
@@ -177,9 +158,8 @@ class CachedAttention(nn.Module):
         self.in_proj_weight = nn.Parameter(torch.empty(3 * dim, dim))
         self.in_proj_bias = nn.Parameter(torch.empty(3 * dim))
         self.out_proj = nn.Linear(dim, dim)
-        # Match nn.MultiheadAttention's reset_parameters. Checkpoints overwrite
-        # these, but tests build raw models: torch.empty is uninitialized
-        # memory and can hold inf/nan garbage that poisons every forward pass.
+        # Checkpoints overwrite these values, but tests and small standalone
+        # models need deterministic, finite parameters before any load.
         nn.init.xavier_uniform_(self.in_proj_weight)
         nn.init.zeros_(self.in_proj_bias)
 
@@ -201,32 +181,6 @@ class CachedAttention(nn.Module):
         out = F.scaled_dot_product_attention(q, keys, values, is_causal=seq_len > 1)
 
         out = out.transpose(1, 2).reshape(batch, seq_len, dim)
-        return self.out_proj(out)
-
-    def forward_decode(self, x, caches, layer_idx):
-        """One-token decode step for a batch of independent sequences.
-
-        The projections run batched, but attention runs per sequence: each
-        cache holds a different-length history in different pool blocks, so
-        there is no single rectangular K/V tensor to attend over. A future
-        paged-attention kernel replaces this Python loop.
-        """
-        batch, seq_len, dim = x.shape  # seq_len is always 1 during decode.
-        q, k, v = F.linear(x, self.in_proj_weight, self.in_proj_bias).chunk(3, dim=-1)
-
-        def split_heads(t):
-            return t.view(batch, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-
-        q, k, v = split_heads(q), split_heads(k), split_heads(v)
-
-        outs = []
-        for i, cache in enumerate(caches):
-            cache.write(layer_idx, cache.position, k[i : i + 1], v[i : i + 1])
-            keys, values = cache.read(layer_idx, cache.position + 1)
-            # A single query attends over its whole history: no mask needed.
-            outs.append(F.scaled_dot_product_attention(q[i : i + 1], keys, values))
-
-        out = torch.cat(outs).transpose(1, 2).reshape(batch, seq_len, dim)
         return self.out_proj(out)
 
 
@@ -252,30 +206,6 @@ class MoEFeedForward(nn.Module):
         self.num_experts = num_experts
         self.experts = nn.ModuleList(Expert(dim, hidden_dim) for _ in range(num_experts))
         self.router = nn.Linear(dim, num_experts, bias=False)
-        self.fused_enabled = True  # Benchmarks flip this to compare paths.
-        self._stacked = None
-        # Reloading weights must drop the stacked copy, or the fused path
-        # would silently keep serving the old parameters.
-        self._register_load_state_dict_pre_hook(self._clear_stacked)
-
-    def _clear_stacked(self, *args):
-        self._stacked = None
-
-    def _stacked_experts(self):
-        """Stack expert weights once for the fused kernel.
-
-        Built lazily on the first fused forward so it runs after checkpoint
-        loading and device placement. This duplicates the expert weights,
-        which are most of the model (about 900 MB for the real checkpoint).
-        """
-        if self._stacked is None:
-            self._stacked = (
-                torch.stack([e.net[0].weight for e in self.experts]),
-                torch.stack([e.net[0].bias for e in self.experts]),
-                torch.stack([e.net[2].weight for e in self.experts]),
-                torch.stack([e.net[2].bias for e in self.experts]),
-            )
-        return self._stacked
 
     def forward(self, x):
         batch, seq_len, dim = x.shape
@@ -286,10 +216,6 @@ class MoEFeedForward(nn.Module):
             router_logits = F.linear(flat_x.float(), self.router.weight.float())
             topk_logits, topk_indices = torch.topk(router_logits, k=self.top_k, dim=-1)
             topk_weights = F.softmax(topk_logits, dim=-1)
-
-        if fused_moe is not None and self.fused_enabled and flat_x.is_cuda:
-            out = fused_moe(flat_x, *self._stacked_experts(), topk_weights, topk_indices)
-            return out.reshape(batch, seq_len, dim)
 
         out = torch.zeros_like(flat_x)
         for expert_id, expert in enumerate(self.experts):
@@ -313,11 +239,6 @@ class TransformerMoEBlock(nn.Module):
 
     def forward(self, x, cache, layer_idx, position):
         x = x + self.attention(self.attn_norm(x), cache, layer_idx, position)
-        x = x + self.moe(self.moe_norm(x))
-        return x
-
-    def forward_decode(self, x, caches, layer_idx):
-        x = x + self.attention.forward_decode(self.attn_norm(x), caches, layer_idx)
         x = x + self.moe(self.moe_norm(x))
         return x
 
@@ -364,33 +285,6 @@ class Model(nn.Module):
         x = self.final_norm(x)
         return self.output_projection(x)
 
-    def forward_decode(self, token_ids, caches):
-        """Decode one token for a batch of sequences at different positions.
-
-        `token_ids` is [num_seqs, 1] and `caches` holds one PagedKVCache per
-        row. Embeddings, norms, and the expert MLPs run genuinely batched;
-        only attention loops over sequences (see CachedAttention). This is
-        the step continuous batching repeats.
-        """
-        num_seqs, seq_len = token_ids.shape
-        assert seq_len == 1, "forward_decode takes one token per sequence"
-        assert len(caches) == num_seqs, "one cache per sequence"
-        for cache in caches:
-            assert cache.position + 1 <= self.max_seq_length, "KV cache is full"
-
-        positions = torch.tensor(
-            [cache.position for cache in caches], device=token_ids.device
-        )
-        x = self.token_embedding(token_ids) + self.positional_embedding(positions).unsqueeze(1)
-
-        for i, block in enumerate(self.MoEBlocks):
-            x = block.forward_decode(x, caches, i)
-        for cache in caches:
-            cache.position += 1
-
-        x = self.final_norm(x)
-        return self.output_projection(x)
-
     @torch.no_grad()
     def generate(self, token_ids, max_new_tokens, temperature=1.0, top_k=None, cache=None):
         """Generate one sequence. The caller owns any supplied cache."""
@@ -422,7 +316,18 @@ class Model(nn.Module):
         step_input = token_ids
         for _ in range(max_new_tokens):
             logits = self(step_input, cache)
-            next_token = sample_next_token(logits[:, -1, :], temperature, top_k)
+            next_token_logits = logits[:, -1, :]
+
+            if temperature == 0:
+                next_token = torch.argmax(next_token_logits, dim=-1, keepdim=True)
+            else:
+                next_token_logits = next_token_logits / temperature
+                if top_k is not None:
+                    sample_top_k = min(top_k, next_token_logits.size(-1))
+                    values, _ = torch.topk(next_token_logits, sample_top_k)
+                    next_token_logits[next_token_logits < values[:, [-1]]] = -float("inf")
+                probs = F.softmax(next_token_logits, dim=-1)
+                next_token = torch.multinomial(probs, num_samples=1)
 
             if next_token == EOS_TOKEN_ID:
                 return x
