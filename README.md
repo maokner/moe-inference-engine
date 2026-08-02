@@ -68,11 +68,18 @@ uv run python scripts/smoke_generate.py
 # parity checks
 uv run pytest tests/
 uv run python scripts/check_parity.py
+uv run python scripts/check_parity.py --device cuda --engine-cache paged-direct
 
-# benchmarks
+# benchmarks (per-system harness)
 uv run python benchmarks/bench.py --system reference
 uv run python benchmarks/bench.py --system engine
-uv run python benchmarks/bench.py --system engine-paged
+uv run python benchmarks/bench.py --system engine-paged --paged-attention gather
+uv run python benchmarks/bench.py --system engine-paged --paged-attention direct
+
+# interleaved comparison, context scaling, and attention microbenchmark
+uv run python benchmarks/ab_compare.py
+uv run python benchmarks/context_sweep.py
+uv run python benchmarks/attention_micro.py
 
 # serve it over HTTP
 uv run python scripts/serve.py
@@ -82,42 +89,69 @@ curl -s localhost:8000/generate -H "Content-Type: application/json" \
 
 ## Status
 
-Milestones 1 and 2 are complete.
-The engine has a custom forward pass, a contiguous KV cache used by `generate()`, and a paged KV cache backed by a shared block pool.
-Both cache implementations expose the same `write` and `read` interface to `CachedAttention`.
+Milestones 1, 2, and 3 are complete.
+The engine has a custom forward pass, a contiguous KV cache, a paged KV cache backed by a shared block pool, and a direct paged-attention Triton kernel that removes most of the old gather path's overhead.
 The HTTP server creates a `PagedKVCache` for each request and returns its blocks afterward.
-Requests are serialized because the current pool holds one maximum-length sequence.
-The server rejects over-length prompts and stops generation when the context window fills.
-`pytest` checks both cache implementations on tiny configurations, including two sequences sharing one block pool.
-On the real checkpoint, `scripts/check_parity.py` reports a maximum logit difference of 1.3e-4 and identical greedy generations ([results/parity_cpu.json](results/parity_cpu.json)).
+Requests are serialized because the current pool holds one maximum-length sequence; multi-request scheduling is deliberately out of scope.
 
-Numbers on MacBook (MPS), 62-token prompt, 128 generated.
-All three rows come from one back-to-back session at the same revision because MPS throughput varies between sessions.
-Each row uses per-position median latencies across three runs.
-Prefill times cover only the forward pass; cache allocation happens outside the timed region.
-Raw step times are stored in [results/](results/).
+### Direct paged attention (milestone 3)
 
-| system | decode tok/s | first half → second half | median / p90 latency | prefill |
-|---|---|---|---|---|
-| reference (no KV cache) | 2.5 | 2.8 → 2.2 (decays) | 258ms / 431ms | 193ms |
-| engine (KV cache) | **18.3** | 18.5 → 18.1 (flat) | 57ms / 63ms | 165ms |
-| engine (paged KV cache) | 14.1 | 14.6 → 13.6 (flat) | 73ms / 82ms | 177ms |
+The old paged path called `PagedKVCache.read()`, which gathered every physical block into freshly allocated contiguous K and V tensors at every layer of every decode step.
+The decode kernel in [src/moe_engine/paged_attention.py](src/moe_engine/paged_attention.py) removes that gather: for logical token position `p` it looks up `physical_block = block_table[p // block_size]` on device and reads the K/V rows at offset `p % block_size` inside that block, straight out of the shared pool.
+Each of the 8 attention heads is one Triton program.
+A head loops over the context in 128-token tiles with an online (running-max) softmax, and pads head dimension 96 to a 128-wide tile under a mask so no invalid columns are read.
+The block table lives twice: the Python list handles allocation, freeing, and tests, and a small int32 device mirror is appended to only when a new block is reserved (once per 16 tokens), never rebuilt per layer or step.
+Everything else stays in PyTorch: QKV and output projections, cache writes, routing, and the expert MLPs.
 
-Fresh single-request measurements on a Thunder Compute NVIDIA RTX A6000 use the same 62-token prompt and 128 greedy tokens, with each result taking per-position medians across three synchronized runs.
-The contiguous and paged paths were repeated in reverse order because this virtualized GPU has noticeable run-to-run variance.
-Raw step times are stored in [results/paged_only_cuda/](results/paged_only_cuda/).
+Prefill never uses the kernel.
+During an initial prefill the entire attention history is exactly the K/V the layer just projected, so the engine writes the blocks for later decode but computes prompt attention directly from those contiguous projection tensors with causal SDPA.
+Multi-token cache writes are also one indexed scatter per pool now instead of a Python loop over tokens.
+Together these removed the paged prefill regression (roughly 102-113 ms before, at parity with the contiguous cache now).
 
-| system | decode tok/s, first pass | decode tok/s, reverse-order pass | prefill |
+Each block allocator picks one of three attention modes.
+`gather` is the original read-and-reconstruct path, kept as the correctness oracle and an explicit benchmark target.
+`direct` forces the kernel and raises where it cannot run.
+`auto` (the default) uses the kernel for CUDA decode and falls back to `gather` decode on CPU/MPS.
+
+### Correctness
+
+`pytest` compares the kernel against the gather-plus-SDPA oracle at contexts from 1 to 1024, across block boundaries, with deliberately non-contiguous physical block ids, partially filled final blocks, and production head dimensions; CUDA tests skip cleanly off-GPU.
+Kernel-level checks pass at atol 2e-5 / rtol 1e-5 in float32; model-level checks use the suite-wide 1e-4.
+On the real checkpoint on CUDA, all three engine paths (contiguous, paged-gather, paged-direct) report the same 6.0e-5 maximum absolute logit difference against the reference model and identical 32-token greedy generations ([results/direct_paged_cuda/](results/direct_paged_cuda/)).
+Forcing `direct` on an unsupported device or dtype is validated before the cache write, so the rejected request allocates no blocks and leaves the cache untouched.
+
+### A6000 results
+
+Measured on a Thunder Compute NVIDIA RTX A6000 (virtualized; torch 2.13.0+cu130, triton 3.7.1) with the 62-token prompt workload.
+Sequential per-system runs on this GPU drift by tens of percent over minutes ([results/direct_paged_cuda/](results/direct_paged_cuda/) keeps two ordered passes of `bench.py` as evidence), so the headline numbers come from [benchmarks/ab_compare.py](benchmarks/ab_compare.py), which interleaves short rounds of all three paths with a rotating start order so drift hits every path equally.
+The final run used 21 rounds of 64 greedy tokens each.
+Decode throughput is total completed steps divided by total decode time, while median and p90 remain latency statistics.
+Raw step times, per-round totals and throughput, and paired confidence intervals are in [results/direct_paged_cuda/ab_compare.json](results/direct_paged_cuda/ab_compare.json):
+
+| system | prefill | decode median / p90 | decode tok/s |
 |---|---:|---:|---:|
-| reference (no KV cache) | 13.0 | - | 80ms |
-| engine (contiguous KV cache) | **16.9** | **17.0** | 71ms / 70ms |
-| engine (paged KV cache) | 15.3 | 16.4 | 102ms / 113ms |
+| engine (contiguous KV cache) | 92.4ms | 62.0ms / 82.0ms | **15.34** |
+| engine (paged, gather) | 95.1ms | 66.1ms / 84.9ms | 14.58 |
+| engine (paged, direct kernel) | 88.6ms | 63.0ms / 85.7ms | 14.97 |
 
-The reference decays because every step recomputes the whole sequence.
-The cache reduces each decode step to one new transformer position; attention over cached history remains linear in context length, but at these context sizes the expert MLPs dominate, so the curve measures flat.
-The paged cache is about 23% slower than the contiguous cache on MPS and 4-10% slower across the two A6000 decode passes because `read()` gathers blocks into a contiguous tensor at every layer and step.
-The shared pool reserves 36 MB of K/V storage for 1024 tokens.
-The 190-token benchmark workload uses 12 of 64 blocks, or about 6.8 MB, while a contiguous cache reserves the full 36 MB for each sequence.
-The serving path intentionally serializes generation requests; multi-request scheduling is outside the current scope.
-Next: build a direct paged-attention kernel that matches or beats the contiguous cache's roughly 17 tok/s A6000 result, then rebuild the fused MoE kernel for additional single-request speed.
+Direct paged attention is 2.7% faster than gather, but 2.4% slower than contiguous in aggregate throughput on this run, so the original match-or-beat acceptance target was not met.
+The paired mean step-latency delta for direct minus contiguous is +1.595ms with a 95% t-interval of +0.234ms to +2.956ms, which supports a small but statistically detectable slowdown rather than an exact tie.
+Direct minus gather is -1.802ms with a 95% interval of -3.072ms to -0.532ms, supporting the direct kernel's improvement over reconstruction.
+The margins are small because the MoE expert loop dominates each roughly 65ms decode step; the attention microbenchmark ([results/direct_paged_cuda/attention_micro.json](results/direct_paged_cuda/attention_micro.json)) shows what the kernel actually replaced per layer call:
+
+| context | contiguous read+SDPA | paged gather+SDPA | direct kernel |
+|---:|---:|---:|---:|
+| 16 | 197us | 406us | 147us |
+| 64 | 108us | 502us | 140us |
+| 256 | 106us | 493us | 146us |
+| 1024 | 98us | 489us | 119us |
+
+The gather path pays for index/copy/reshape kernel chains on every call; the direct path is one kernel launch and stays nearly flat in context length.
+An interleaved context sweep at 16/64/256/1024 cached tokens shows the same picture end to end: direct tracks contiguous within about 1 ms per step at every context while gather is slowest, worst at 1024 ([results/direct_paged_cuda/context_sweep.json](results/direct_paged_cuda/context_sweep.json)).
+
+Earlier milestone-2 measurements (MacBook MPS and the first A6000 session, gather path with the old per-token writes) are preserved in [results/](results/) and [results/paged_only_cuda/](results/paged_only_cuda/) for history.
+The shared pool reserves 36 MB of K/V storage for 1024 tokens; the 190-token benchmark workload holds 12 of 64 blocks, about 6.8 MB, while a contiguous cache reserves the full 36 MB per sequence.
+Known limitation: absolute tok/s on Thunder's virtualized GPUs is depressed by high launch latency and varies between sessions, so cross-session comparisons are invalid; the dedicated-GPU vLLM comparison planned for later milestones will produce the citable absolute numbers.
+The remaining direct-versus-contiguous gap is small enough that CUDA graphs are the most relevant cache-path optimization, while the larger whole-model opportunity remains the fused MoE kernel because the expert loop dominates decode time.
+Next: rebuild the fused MoE kernel (top-2 dispatch plus grouped expert GEMMs) for additional single-request speed.
 See [moe-inference-engine.md](moe-inference-engine.md) for the full project plan, risks, and timeline.

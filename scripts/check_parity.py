@@ -23,25 +23,45 @@ def main() -> None:
     parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--new-tokens", type=int, default=32)
+    parser.add_argument(
+        "--engine-cache",
+        choices=["contiguous", "paged-auto", "paged-gather", "paged-direct"],
+        default="contiguous",
+        help="which KV cache and attention path the engine uses",
+    )
     parser.add_argument("--output", help="also write the report to this JSON file")
     args = parser.parse_args()
 
     reference, _, _ = load_reference_model(args.checkpoint, args.device)
     engine, _, _ = load_engine_model(args.checkpoint, args.device)
 
+    def make_cache():
+        if args.engine_cache == "contiguous":
+            return engine.new_cache()
+        block_size = 16
+        num_blocks = -(-engine.max_seq_length // block_size)
+        allocator = engine.new_block_allocator(
+            num_blocks=num_blocks,
+            block_size=block_size,
+            attention_mode=args.engine_cache.removeprefix("paged-"),
+        )
+        return allocator.new_cache()
+
     enc = tiktoken.get_encoding("gpt2")
     ids = torch.tensor([enc.encode(PROMPT)], device=args.device)
 
     with torch.no_grad():
         reference_logits, _ = reference(ids)
-        engine_logits = engine(ids, engine.new_cache())
+        engine_logits = engine(ids, make_cache())
 
     abs_diff = (reference_logits - engine_logits).abs()
     # Clamp the scale to avoid unstable ratios near zero.
     rel_diff = abs_diff / reference_logits.abs().clamp(min=1.0)
 
     reference_tokens = reference.generate(ids[0], args.new_tokens, temperature=0)[0].tolist()
-    engine_tokens = engine.generate(ids[0], args.new_tokens, temperature=0)[0].tolist()
+    engine_tokens = engine.generate(
+        ids[0], args.new_tokens, temperature=0, cache=make_cache()
+    )[0].tolist()
     first_mismatch = next(
         (i for i, (a, b) in enumerate(zip(reference_tokens, engine_tokens)) if a != b),
         None,
@@ -52,6 +72,7 @@ def main() -> None:
     report = {
         "checkpoint": args.checkpoint,
         "device": args.device,
+        "engine_cache": args.engine_cache,
         "dtype": str(next(engine.parameters()).dtype),
         "prompt": PROMPT,
         "prompt_tokens": ids.shape[1],

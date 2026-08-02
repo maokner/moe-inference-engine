@@ -1,0 +1,12 @@
+{
+  "checkpoint": "checkpoints/minimoe_sft.pt",
+  "device": "cuda",
+  "engine_cache": "paged-gather",
+  "dtype": "torch.float32",
+  "prompt": "The key idea behind a mixture-of-experts model is",
+  "prompt_tokens": 13,
+  "max_abs_logit_diff": 6.008148193359375e-05,
+  "max_rel_logit_diff": 4.9591064453125e-05,
+  "greedy_tokens_compared": 32,
+  "first_greedy_mismatch": null
+}

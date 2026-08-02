@@ -1,0 +1,26 @@
+{
+  "device": "NVIDIA RTX A6000",
+  "iters": 200,
+  "attention_us": {
+    "16": {
+      "contiguous_read_sdpa_us": 197.3,
+      "paged_gather_sdpa_us": 406.2,
+      "paged_direct_kernel_us": 146.9
+    },
+    "64": {
+      "contiguous_read_sdpa_us": 107.7,
+      "paged_gather_sdpa_us": 502.0,
+      "paged_direct_kernel_us": 139.9
+    },
+    "256": {
+      "contiguous_read_sdpa_us": 105.6,
+      "paged_gather_sdpa_us": 493.4,
+      "paged_direct_kernel_us": 146.0
+    },
+    "1024": {
+      "contiguous_read_sdpa_us": 97.5,
+      "paged_gather_sdpa_us": 488.9,
+      "paged_direct_kernel_us": 118.8
+    }
+  }
+}

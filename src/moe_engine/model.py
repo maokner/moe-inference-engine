@@ -10,6 +10,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+from moe_engine import paged_attention
+
 EOS_TOKEN_ID = 50256
 
 
@@ -64,7 +66,17 @@ class BlockAllocator:
         block_size: int,
         device,
         dtype=torch.float32,
+        attention_mode: str = "auto",
     ):
+        # How caches from this pool run decode attention:
+        #   "gather" - reconstruct contiguous K/V then call PyTorch attention
+        #              (the original path, kept as oracle and fallback),
+        #   "direct" - require the Triton kernel that reads blocks in place,
+        #   "auto"   - direct when supported (CUDA + Triton), else gather.
+        if attention_mode not in ("auto", "direct", "gather"):
+            raise ValueError(f"unknown attention_mode {attention_mode!r}")
+        self.attention_mode = attention_mode
+        self.num_blocks = num_blocks
         self.block_size = block_size
         self.num_heads = config.num_heads
         self.head_dim = config.hidden_dim // config.num_heads
@@ -96,8 +108,17 @@ class PagedKVCache:
 
     def __init__(self, allocator: BlockAllocator):
         self.allocator = allocator
+        self.attention_mode = allocator.attention_mode
         self.block_table: list[int] = []
         self.position = 0
+        # Device-side mirror of block_table so the direct kernel can map
+        # logical positions to physical blocks without a host copy per step.
+        # Only the first len(block_table) entries are meaningful; the mirror
+        # is updated incrementally as blocks are appended, never rebuilt.
+        self.block_table_device = torch.zeros(
+            allocator.num_blocks, dtype=torch.int32, device=allocator.k_pool.device
+        )
+        self._write_index_key = None  # (position, seq_len) of cached indices
 
     def _reserve(self, num_tokens: int) -> None:
         """Reserve enough blocks for `num_tokens` without partial allocation."""
@@ -109,11 +130,37 @@ class PagedKVCache:
         except RuntimeError:
             self.allocator.free(taken)
             raise
-        self.block_table.extend(taken)
+        if taken:
+            start = len(self.block_table)
+            self.block_table.extend(taken)
+            # Append only the new entries to the device mirror. A new block is
+            # needed once per block_size tokens, so this tiny host-to-device
+            # copy stays out of the per-layer hot path.
+            self.block_table_device[start : start + len(taken)] = torch.tensor(
+                taken, dtype=torch.int32, device=self.block_table_device.device
+            )
 
     def _block_for(self, token_pos: int) -> tuple[int, int]:
         block_size = self.allocator.block_size
         return self.block_table[token_pos // block_size], token_pos % block_size
+
+    def _write_indices(self, position, seq_len):
+        """Physical (block, slot) index tensors for a multi-token write.
+
+        Every layer writes the same positions during one forward pass, so the
+        tensors are built once per step and reused across layers.
+        """
+        if self._write_index_key != (position, seq_len):
+            block_size = self.allocator.block_size
+            pos = torch.arange(
+                position, position + seq_len, device=self.block_table_device.device
+            )
+            self._write_index = (
+                self.block_table_device[pos // block_size].long(),  # physical block ids
+                pos % block_size,  # slot within each block
+            )
+            self._write_index_key = (position, seq_len)
+        return self._write_index
 
     def write(self, layer_idx, position, k, v):
         # Each cache has one block table and represents one sequence.
@@ -121,10 +168,18 @@ class PagedKVCache:
             raise ValueError("PagedKVCache holds one sequence; use batch size 1")
         seq_len = k.shape[2]
         self._reserve(position + seq_len)
-        for offset in range(seq_len):
-            block_id, slot = self._block_for(position + offset)
-            self.allocator.k_pool[layer_idx, block_id, :, slot] = k[0, :, offset]
-            self.allocator.v_pool[layer_idx, block_id, :, slot] = v[0, :, offset]
+        if seq_len == 1:
+            # Decode: one indexed store per pool, addressed with host-side ints.
+            block_id, slot = self._block_for(position)
+            self.allocator.k_pool[layer_idx, block_id, :, slot] = k[0, :, 0]
+            self.allocator.v_pool[layer_idx, block_id, :, slot] = v[0, :, 0]
+            return
+        # Prefill: scatter every position in one indexed copy instead of a
+        # Python loop per token. Indexing [layer, blocks, :, slots] selects
+        # one (block, slot) pair per token, giving [seq, head, head_dim].
+        blocks, slots = self._write_indices(position, seq_len)
+        self.allocator.k_pool[layer_idx, blocks, :, slots] = k[0].transpose(0, 1)
+        self.allocator.v_pool[layer_idx, blocks, :, slots] = v[0].transpose(0, 1)
 
     def read(self, layer_idx, length):
         block_size = self.allocator.block_size
@@ -146,6 +201,7 @@ class PagedKVCache:
         self.allocator.free(self.block_table)
         self.block_table = []
         self.position = 0
+        self._write_index_key = None  # Stale device-mirror entries are never read.
 
 
 class CachedAttention(nn.Module):
@@ -173,12 +229,37 @@ class CachedAttention(nn.Module):
 
         q, k, v = split_heads(q), split_heads(k), split_heads(v)
 
+        # Contiguous caches always read + attend; paged caches pick a mode.
+        # A forced 'direct' that cannot run must fail before the write below
+        # allocates blocks, so a rejected forward leaves the cache untouched.
+        mode = getattr(cache, "attention_mode", "gather")
+        use_kernel = mode != "gather" and paged_attention.is_supported(x)
+        if mode == "direct" and not use_kernel:
+            raise RuntimeError(
+                "attention_mode='direct' needs CUDA, Triton, and float32; "
+                "use 'auto' for automatic fallback or 'gather' for the oracle path"
+            )
+
         cache.write(layer_idx, position, k, v)
-        keys, values = cache.read(layer_idx, position + seq_len)
 
         # Prefill needs a mask; a single decode query can use the full cache.
         assert position == 0 or seq_len == 1, "prefill must start at position 0"
-        out = F.scaled_dot_product_attention(q, keys, values, is_causal=seq_len > 1)
+
+        if mode != "gather" and position == 0:
+            # Prefill fast path: at position 0 the entire history is exactly
+            # the K/V just projected, so attend over those contiguous tensors
+            # instead of writing blocks and immediately gathering them back.
+            out = F.scaled_dot_product_attention(q, k, v, is_causal=seq_len > 1)
+        elif use_kernel:
+            # Decode: the Triton kernel reads K/V in place from the physical
+            # block pool through the block table - no contiguous rebuild.
+            out = paged_attention.decode(q, cache, layer_idx, context_len=position + 1)
+        else:
+            # Gather path: reconstruct contiguous K/V, then PyTorch attention.
+            # This is the original implementation, the correctness oracle, and
+            # the CPU/MPS decode fallback.
+            keys, values = cache.read(layer_idx, position + seq_len)
+            out = F.scaled_dot_product_attention(q, keys, values, is_causal=seq_len > 1)
 
         out = out.transpose(1, 2).reshape(batch, seq_len, dim)
         return self.out_proj(out)
@@ -263,10 +344,14 @@ class Model(nn.Module):
         weight = self.token_embedding.weight
         return KVCache(self.config, batch_size, weight.device, weight.dtype)
 
-    def new_block_allocator(self, num_blocks: int, block_size: int = 16) -> BlockAllocator:
+    def new_block_allocator(
+        self, num_blocks: int, block_size: int = 16, attention_mode: str = "auto"
+    ) -> BlockAllocator:
         """Create a block pool matching the model's device and dtype."""
         weight = self.token_embedding.weight
-        return BlockAllocator(self.config, num_blocks, block_size, weight.device, weight.dtype)
+        return BlockAllocator(
+            self.config, num_blocks, block_size, weight.device, weight.dtype, attention_mode
+        )
 
     def forward(self, token_ids, cache):
         """Run a forward pass using a contiguous or paged cache."""

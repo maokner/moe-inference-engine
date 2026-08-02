@@ -12,15 +12,17 @@ Results include throughput, time-to-first-token, and latency curves on specified
 
 ## Custom kernel path
 
-The next kernel reads non-contiguous paged K/V blocks directly so attention no longer reconstructs contiguous tensors during every layer and decode step.
-A later kernel covers top-2 routing and grouped expert GEMMs without padded per-expert batches.
+The direct paged-attention kernel is implemented: decode attention reads non-contiguous K/V blocks through the block table in one Triton kernel, and prefill attends over the contiguous projection outputs instead of gathering blocks back.
+On the final 21-round interleaved A6000 comparison it reached 14.97 tok/s, ahead of the old gather path at 14.58 tok/s but behind the contiguous cache at 15.34 tok/s.
+The paired direct-minus-contiguous latency delta was +1.595ms with a 95% interval of +0.234ms to +2.956ms, so the data supports a small slowdown and the original match-or-beat target remains unmet.
+The next kernel covers top-2 routing and grouped expert GEMMs without padded per-expert batches.
 Quantization provides the surrounding inference path.
 
 ## Scope, in build order
 
-1. **Baseline server.** Plain PyTorch generation over HTTP.
-2. **Paged KV cache.** Fixed-size blocks and a block table per sequence.
-3. **Direct paged attention.** Read non-contiguous K/V blocks directly instead of gathering them into contiguous tensors on every decode step, with the acceptance target of matching or beating the contiguous KV cache on the same single-request benchmark.
+1. **Baseline server.** Plain PyTorch generation over HTTP. Done.
+2. **Paged KV cache.** Fixed-size blocks and a block table per sequence. Done.
+3. **Direct paged attention.** Read non-contiguous K/V blocks directly instead of gathering them into contiguous tensors on every decode step, with the acceptance target of matching or beating the contiguous KV cache on the same single-request benchmark. Implemented: beat gather by 2.7% but trailed contiguous by 2.4% on the final interleaved A6000 run.
 4. **Fused MoE kernel.** Fuse top-2 dispatch and grouped expert GEMMs in Triton or CUDA.
 5. **Quantization.** Int8 and int4 groupwise expert weights, with HellaSwag and perplexity measurements.
 6. **CUDA graphs.** Capture the decode step to kill launch overhead at small batch sizes.
@@ -69,6 +71,7 @@ Swap when the direct paged-attention or fused-MoE milestone has dedicated-GPU nu
 
 ## Next steps
 
-- Read the vLLM paged-attention and fused_moe source and the PagedAttention paper before writing any code; know the reference designs cold.
-- Milestone 1: baseline server + benchmark harness first, so every later change lands as a measured delta.
-- Rent the GPU only from milestone 2 onward; milestone 1 debugs fine on the MacBook with MPS.
+- Milestone 4: rebuild the fused MoE kernel (top-2 dispatch plus grouped expert GEMMs); read the vLLM `fused_moe` source first and keep the expert-loop implementation as the oracle.
+- The MoE expert loop dominates each decode step, so this is where the next large single-request win is.
+- CUDA graphs are the most relevant later optimization for the remaining direct-attention launch-overhead gap against contiguous SDPA.
+- Benchmark discipline from milestone 3 carries forward: interleave systems within one session on virtualized GPUs; sequential passes drift too much to resolve small differences.

@@ -109,6 +109,12 @@ def main() -> None:
     parser.add_argument(
         "--system", choices=["reference", "engine", "engine-paged"], default="reference"
     )
+    parser.add_argument(
+        "--paged-attention",
+        choices=["auto", "direct", "gather"],
+        default="auto",
+        help="engine-paged only: direct Triton kernel, legacy gather path, or auto",
+    )
     parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
     parser.add_argument("--new-tokens", type=int, default=128)
     parser.add_argument("--repeats", type=int, default=3)
@@ -126,16 +132,29 @@ def main() -> None:
     if args.system == "reference":
         model, config, metadata = load_reference_model(args.checkpoint, device)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
-        make_cache, cleanup = lambda: None, None
-        prefill = lambda _: model(prompt_ids.unsqueeze(0))
-        decode = lambda n: timed_greedy_decode(model, prompt_ids, device, n)
+        cleanup = None
+
+        def make_cache():
+            return None
+
+        def prefill(_):
+            return model(prompt_ids.unsqueeze(0))
+
+        def decode(n):
+            return timed_greedy_decode(model, prompt_ids, device, n)
+
         label = "reference (no KV cache)"
     elif args.system == "engine":
         model, config, metadata = load_engine_model(args.checkpoint, device)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
         make_cache, cleanup = model.new_cache, None
-        prefill = lambda cache: model(prompt_ids.unsqueeze(0), cache)
-        decode = lambda n: timed_greedy_decode_engine(model, prompt_ids, device, n)
+
+        def prefill(cache):
+            return model(prompt_ids.unsqueeze(0), cache)
+
+        def decode(n):
+            return timed_greedy_decode_engine(model, prompt_ids, device, n)
+
         label = "engine (KV cache)"
     else:
         model, config, metadata = load_engine_model(args.checkpoint, device)
@@ -143,12 +162,15 @@ def main() -> None:
         # Match the server's one-sequence pool.
         block_size = 16
         num_blocks = -(-model.max_seq_length // block_size)
-        allocator = model.new_block_allocator(num_blocks=num_blocks, block_size=block_size)
+        allocator = model.new_block_allocator(
+            num_blocks=num_blocks, block_size=block_size, attention_mode=args.paged_attention
+        )
         pool_bytes = 2 * allocator.k_pool.numel() * allocator.k_pool.element_size()
         kv_config = {
             "kv_block_size": block_size,
             "kv_num_blocks": num_blocks,
             "kv_pool_mb": round(pool_bytes / 2**20, 1),
+            "paged_attention": args.paged_attention,
         }
 
         def decode(n):
@@ -164,8 +186,11 @@ def main() -> None:
             cache.free()
 
         make_cache = allocator.new_cache
-        prefill = lambda cache: model(prompt_ids.unsqueeze(0), cache)
-        label = "engine (paged KV cache)"
+
+        def prefill(cache):
+            return model(prompt_ids.unsqueeze(0), cache)
+
+        label = f"engine (paged KV cache, {args.paged_attention})"
 
     # Warm up kernels and device allocations.
     decode(8)
