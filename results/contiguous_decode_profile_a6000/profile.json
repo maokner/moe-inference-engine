@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "checkpoint": "/home/ubuntu/moe-inference-engine/checkpoints/minimoe_sft.pt",
+  "checkpoint_step": 6358,
+  "hardware": {
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.35",
+    "machine": "x86_64",
+    "python": "3.12.13",
+    "torch": "2.13.0+cu130",
+    "tiktoken": "0.13.0",
+    "device": "cuda",
+    "gpu": "NVIDIA RTX A6000",
+    "cuda": "13.0",
+    "gpu_memory_bytes": 50896568320,
+    "compute_capability": "8.6",
+    "triton": "3.7.1",
+    "driver": "610.43.02"
+  },
+  "prompt": "The mixture-of-experts architecture replaces the dense feed-forward layer of a transformer with a set of expert networks and a router. For each token, the router selects a small number of experts, so the model gains parameters without a matching increase in compute. The hard part is serving it efficiently, because",
+  "prompt_tokens": 62,
+  "warmup_steps": 32,
+  "steps": 64,
+  "cache": "contiguous",
+  "decode": "one token per forward, greedy argmax",
+  "outputs_match": true,
+  "generated_token_ids": [
+    2746,
+    318,
+    407,
+    691,
+    6942,
+    475,
+    635,
+    468,
+    257,
+    1029,
+    4922,
+    286,
+    9922,
+    13,
+    198,
+    198,
+    464,
+    2746,
+    338,
+    2854,
+    318,
+    635,
+    16726,
+    416,
+    14176,
+    340,
+    284,
+    257,
+    2746,
+    326,
+    468,
+    587,
+    8776,
+    319,
+    257,
+    1588,
+    27039,
+    286,
+    1103,
+    12,
+    6894,
+    1366,
+    13,
+    383,
+    2746,
+    338,
+    2854,
+    318,
+    16726,
+    416,
+    14176,
+    340,
+    284,
+    257,
+    2746,
+    326,
+    468,
+    587,
+    8776,
+    319,
+    257,
+    1588,
+    27039,
+    286
+  ],
+  "uninstrumented": {
+    "measurement": "CUDA events",
+    "step_times_ms": [
+      67.83529663085938,
+      62.903263092041016,
+      67.24578857421875,
+      66.66429138183594,
+      64.28300476074219,
+      71.35411071777344,
+      66.17823791503906,
+      68.5732192993164,
+      68.76048278808594,
+      58.58342361450195,
+      52.07417678833008,
+      61.94131088256836,
+      66.2518081665039,
+      63.26073455810547,
+      65.91865539550781,
+      62.290016174316406,
+      53.86649703979492,
+      64.95391845703125,
+      66.15487670898438,
+      65.07286071777344,
+      68.93577575683594,
+      67.88371276855469,
+      68.06521606445312,
+      71.5090560913086,
+      67.53462219238281,
+      65.77008056640625,
+      66.27545928955078,
+      67.1322250366211,
+      67.0363540649414,
+      64.12413024902344,
+      65.40684509277344,
+      65.5414047241211,
+      64.96534729003906,
+      66.6065902709961,
+      63.103424072265625,
+      64.83888244628906,
+      63.94572830200195,
+      67.8763198852539,
+      66.94556427001953,
+      68.54354858398438,
+      65.51385498046875,
+      66.11138916015625,
+      66.0664291381836,
+      62.72972869873047,
+      63.780609130859375,
+      62.03654479980469,
+      64.05097961425781,
+      59.682655334472656,
+      55.92655944824219,
+      66.77916717529297,
+      66.28656005859375,
+      65.1657943725586,
+      65.83270263671875,
+      62.74854278564453,
+      65.51497650146484,
+      63.23174285888672,
+      63.40092849731445,
+      62.2737922668457,
+      62.23555374145508,
+      63.478145599365234,
+      62.42784118652344,
+      64.07830047607422,
+      65.22994995117188,
+      66.48831939697266
+    ],
+    "median_ms": 65.4603500366211,
+    "mean_ms": 64.80120825767517,
+    "p90_ms": 68.06521606445312,
+    "tokens_per_second": 15.431811024627896
+  },
+  "profiled": {
+    "timing_basis": "CPU-scope wall time under CPU-activity torch.profiler",
+    "instrumented_total_ms_per_step": 78.83978873437499,
+    "instrumented_total_cpu_ms_per_step": 78.83978873437499,
+    "components": [
+      {
+        "component": "qkv_attention_work",
+        "instrumented_ms_per_step": 6.3252320781250075,
+        "percent_of_instrumented_step": 8.022893236606478,
+        "calls": 384,
+        "calls_per_step": 6.0
+      },
+      {
+        "component": "moe_routing_top2",
+        "instrumented_ms_per_step": 55.022138640625045,
+        "percent_of_instrumented_step": 69.78980984589423,
+        "calls": 3456,
+        "calls_per_step": 54.0
+      },
+      {
+        "component": "expert_mlp_execution",
+        "instrumented_ms_per_step": 5.400470968750171,
+        "percent_of_instrumented_step": 6.849930796929581,
+        "calls": 768,
+        "calls_per_step": 12.0
+      },
+      {
+        "component": "route_weight_combination",
+        "instrumented_ms_per_step": 2.409307000000142,
+        "percent_of_instrumented_step": 3.05595314076439,
+        "calls": 768,
+        "calls_per_step": 12.0
+      },
+      {
+        "component": "layernorm_residual_output",
+        "instrumented_ms_per_step": 4.537439859375147,
+        "percent_of_instrumented_step": 5.755266385432074,
+        "calls": 1280,
+        "calls_per_step": 20.0
+      }
+    ],
+    "cuda_activity_collected": false,
+    "cuda_launch_calls": null,
+    "cuda_launch_calls_per_step": null,
+    "cuda_launch_cpu_ms_per_step": null,
+    "cpu_operator_self_ms_per_step": 61.66512815625069,
+    "cpu_operator_calls_per_step": 1659.0,
+    "expert_loop": {
+      "cpu_scope_ms_per_step": 62.862695609375,
+      "unattributed_python_cpu_ms_per_step": 2.4936579531245306,
+      "calls_per_step": 6.0
+    },
+    "top_cpu_operators": [
+      {
+        "operator": "aten::nonzero",
+        "cpu_self_ms_per_step": 38.19635821874972,
+        "calls_per_step": 48.0
+      },
+      {
+        "operator": "aten::addmm",
+        "cpu_self_ms_per_step": 3.9313673750001326,
+        "calls_per_step": 37.0
+      },
+      {
+        "operator": "aten::eq",
+        "cpu_self_ms_per_step": 3.7413396406253336,
+        "calls_per_step": 48.0
+      },
+      {
+        "operator": "aten::index",
+        "cpu_self_ms_per_step": 1.7533762499998984,
+        "calls_per_step": 24.0
+      },
+      {
+        "operator": "aten::add",
+        "cpu_self_ms_per_step": 0.9162709687499061,
+        "calls_per_step": 13.0
+      },
+      {
+        "operator": "aten::mul",
+        "cpu_self_ms_per_step": 0.8592595625001447,
+        "calls_per_step": 12.0
+      },
+      {
+        "operator": "aten::native_layer_norm",
+        "cpu_self_ms_per_step": 0.8575715937496136,
+        "calls_per_step": 13.0
+      },
+      {
+        "operator": "aten::topk",
+        "cpu_self_ms_per_step": 0.8098067968749992,
+        "calls_per_step": 6.0
+      },
+      {
+        "operator": "aten::empty",
+        "cpu_self_ms_per_step": 0.7476310312501319,
+        "calls_per_step": 66.0
+      },
+      {
+        "operator": "aten::gelu",
+        "cpu_self_ms_per_step": 0.6977485156250108,
+        "calls_per_step": 12.0
+      },
+      {
+        "operator": "aten::mm",
+        "cpu_self_ms_per_step": 0.6721399531249631,
+        "calls_per_step": 6.0
+      },
+      {
+        "operator": "aten::as_strided",
+        "cpu_self_ms_per_step": 0.6400001562502025,
+        "calls_per_step": 338.0
+      },
+      {
+        "operator": "aten::index_add_",
+        "cpu_self_ms_per_step": 0.6174743750000832,
+        "calls_per_step": 12.0
+      },
+      {
+        "operator": "aten::copy_",
+        "cpu_self_ms_per_step": 0.6113252500001167,
+        "calls_per_step": 12.0
+      },
+      {
+        "operator": "aten::transpose",
+        "cpu_self_ms_per_step": 0.5540052187502488,
+        "calls_per_step": 139.0
+      },
+      {
+        "operator": "aten::select",
+        "cpu_self_ms_per_step": 0.5242624843745919,
+        "calls_per_step": 121.0
+      },
+      {
+        "operator": "aten::unbind",
+        "cpu_self_ms_per_step": 0.4937312812501201,
+        "calls_per_step": 48.0
+      },
+      {
+        "operator": "aten::view",
+        "cpu_self_ms_per_step": 0.4661470781252227,
+        "calls_per_step": 126.0
+      },
+      {
+        "operator": "aten::_efficient_attention_forward",
+        "cpu_self_ms_per_step": 0.43090201562501074,
+        "calls_per_step": 6.0
+      },
+      {
+        "operator": "aten::t",
+        "cpu_self_ms_per_step": 0.4240032187504252,
+        "calls_per_step": 91.0
+      }
+    ]
+  },
+  "artifacts": {
+    "trace": "trace.json.gz",
+    "trace_event_count": 116427
+  },
+  "limitations": [
+    "torch.profiler and record_function add CPU overhead, so component timings are reported separately from clean latency.",
+    "The component profile collects CPU activity only because CUPTI can drop CUDA-activity buffers on virtualized GPUs; clean whole-step GPU latency still uses CUDA events.",
+    "CPU scope time includes dispatch and synchronous GPU waits; asynchronous GPU work may be charged to a later synchronization scope, so values are critical-path attribution rather than isolated kernel durations.",
+    "The repeated steps grow context from 62 tokens; results describe warmed early decode, not every context length."
+  ]
+}

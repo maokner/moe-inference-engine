@@ -1,0 +1,32 @@
+USDT:2026-08-03 00:15:22 1820:1820 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-08-03 00:15:28 1820:1820 SyncActivityProfilerHandler.cpp:59] profiler_stop
+# One-token contiguous decode profile
+
+Hardware: NVIDIA RTX A6000.
+Checkpoint step: 6358.
+Workload: 62-token benchmark prompt followed by 64 one-token greedy decode steps.
+Clean median decode latency: 65.460 ms (15.43 tok/s).
+Instrumented total: 78.840 ms per step using CPU-scope wall time under CPU-activity torch.profiler.
+The component timings below come from the instrumented profiler run and are not uninstrumented throughput measurements.
+
+| component | instrumented ms/step | share | calls/step |
+|---|---:|---:|---:|
+| moe_routing_top2 | 55.022 | 69.8% | 54.0 |
+| qkv_attention_work | 6.325 | 8.0% | 6.0 |
+| expert_mlp_execution | 5.400 | 6.8% | 12.0 |
+| layernorm_residual_output | 4.537 | 5.8% | 20.0 |
+| route_weight_combination | 2.409 | 3.1% | 12.0 |
+
+Combined MoE routing, expert, and route-combination work: 62.832 ms per step (79.7% of instrumented decode time).
+The combined MoE path dominates instrumented decode time, so it is the next kernel target.
+Largest component scope: moe_routing_top2 at 55.022 ms per step (69.8% of instrumented decode time).
+The existing per-expert loop itself has 2.494 ms per step of profiler-unattributed Python CPU time (3.8% of clean median latency); its nested tensor operations and kernel launches are reported in the component rows.
+The largest individual CPU operator is aten::nonzero at 38.196 ms per step across 48.0 calls per step.
+CPU operator self time: 61.665 ms per step across 1659.0 calls per step.
+CUDA launch events are unavailable in the CPU-activity-only trace; CPU operator dispatch time and call counts are reported instead.
+The next MoE kernel should target batch-one decode directly: compute the float32 8-way router and normalized top-2 weights, run only the two selected 768x3072x768 GELU expert MLPs, and combine their weighted outputs without torch.where, per-expert Python dispatch, CPU reads of route counts, or index_add_ launches.
+A practical first design uses three fixed-shape Triton kernels per layer: router plus top-2 writes two device-resident ids and weights; selected-expert W1 plus GELU writes a [2, 3072] intermediate; selected-expert W2 plus weighted reduction writes one [768] output row.
+Keep the existing PyTorch expert loop as the correctness oracle and require logit and greedy-token parity before benchmarking.
+
+Raw profile: results/contiguous_decode_profile_a6000/profile.json
+Trace: results/contiguous_decode_profile_a6000/trace.json

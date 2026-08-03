@@ -2,6 +2,7 @@
 
 Usage:
     uv run python scripts/serve.py
+    uv run python scripts/serve.py --cache paged --paged-attention direct
     curl -s localhost:8000/generate -d '{"prompt": "The capital of France is"}'
 """
 
@@ -35,11 +36,44 @@ class GenerateRequest(BaseModel):
 app = FastAPI(title="moe-engine")
 enc = tiktoken.get_encoding("gpt2")
 model = None  # Initialized in main().
-allocator = None  # Shared KV block pool, initialized in main().
+cache_mode = "contiguous"
+allocator = None  # Shared KV block pool, initialized only for paged mode.
 device = pick_device()
 
 # The pool holds one max-length sequence, so serialize generation requests.
 generate_lock = threading.Lock()
+
+
+def new_request_cache():
+    """Create the selected single-request cache."""
+    if cache_mode == "contiguous":
+        return model.new_cache()
+    return allocator.new_cache()
+
+
+def release_request_cache(cache) -> None:
+    """Release shared paged blocks; contiguous caches need no explicit cleanup."""
+    if cache_mode == "paged":
+        cache.free()
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
+    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument(
+        "--cache",
+        choices=["contiguous", "paged"],
+        default="contiguous",
+        help="KV cache used for serving (default: contiguous for lowest single-request latency)",
+    )
+    parser.add_argument(
+        "--paged-attention",
+        choices=["auto", "direct", "gather"],
+        default="auto",
+        help="paged cache only: direct Triton kernel, gather oracle, or automatic fallback",
+    )
+    return parser
 
 
 @app.post("/generate")
@@ -54,7 +88,7 @@ def generate(req: GenerateRequest):
         )
 
     with generate_lock:
-        cache = allocator.new_cache()
+        cache = new_request_cache()
         start = time.perf_counter()
         try:
             out = model.generate(
@@ -65,10 +99,10 @@ def generate(req: GenerateRequest):
                 cache=cache,
             )
         finally:
-            cache.free()
+            release_request_cache(cache)
         elapsed = time.perf_counter() - start
 
-    new_ids = out[0, len(prompt_ids):].tolist()
+    new_ids = out[0, len(prompt_ids) :].tolist()
     # generate() returns only tokens, so infer the stopping condition.
     if len(new_ids) == req.max_new_tokens:
         finish_reason = "length"
@@ -85,18 +119,24 @@ def generate(req: GenerateRequest):
 
 
 def main() -> None:
-    global model, allocator
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
-    parser.add_argument("--port", type=int, default=8000)
-    args = parser.parse_args()
+    global model, cache_mode, allocator
+    args = build_parser().parse_args()
 
     model, _, metadata = load_engine_model(args.checkpoint, device)
-    # Size the pool for one maximum-length request.
-    block_size = 16
-    num_blocks = -(-model.max_seq_length // block_size)  # Ceiling division.
-    allocator = model.new_block_allocator(num_blocks=num_blocks, block_size=block_size)
-    print(f"Serving checkpoint step {metadata['step']} on {device}")
+    cache_mode = args.cache
+    allocator = None
+    if cache_mode == "paged":
+        # Size the pool for one maximum-length request.
+        block_size = 16
+        num_blocks = -(-model.max_seq_length // block_size)  # Ceiling division.
+        allocator = model.new_block_allocator(
+            num_blocks=num_blocks,
+            block_size=block_size,
+            attention_mode=args.paged_attention,
+        )
+    print(
+        f"Serving checkpoint step {metadata['step']} on {device} with {cache_mode} KV cache"
+    )
     uvicorn.run(app, host="127.0.0.1", port=args.port)
 
 
