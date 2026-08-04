@@ -14,6 +14,7 @@ import torch
 from moe_engine.vllm_runtime import (
     DEFAULT_KV_CACHE_MEMORY_BYTES,
     MINIMUM_KV_CACHE_MEMORY_BYTES,
+    STARTUP_MEMORY_GUARD_UTILIZATION,
     async_engine_kwargs,
     validate_kv_cache_memory_bytes,
 )
@@ -102,7 +103,7 @@ def test_paired_statistics_use_per_round_candidate_minus_baseline_deltas():
     assert ttft["method"] == "paired two-sided Student-t interval"
 
 
-def test_fixed_fp32_kv_cache_configuration_ignores_utilization_policy():
+def test_fixed_fp32_kv_cache_configuration_uses_utilization_only_as_guard():
     assert MINIMUM_KV_CACHE_MEMORY_BYTES == 37_748_736
     assert DEFAULT_KV_CACHE_MEMORY_BYTES == 75_497_472
     kwargs = async_engine_kwargs(
@@ -114,7 +115,7 @@ def test_fixed_fp32_kv_cache_configuration_ignores_utilization_policy():
     assert kwargs["dtype"] == "float32"
     assert kwargs["max_num_seqs"] == 1
     assert kwargs["max_model_len"] == 1024
-    assert "gpu_memory_utilization" not in kwargs
+    assert kwargs["gpu_memory_utilization"] == STARTUP_MEMORY_GUARD_UTILIZATION == 0.5
     with pytest.raises(ValueError, match="too small"):
         validate_kv_cache_memory_bytes(MINIMUM_KV_CACHE_MEMORY_BYTES - 1)
 

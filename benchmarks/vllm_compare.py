@@ -28,6 +28,7 @@ from moe_engine.vllm_runtime import (
     DEFAULT_KV_CACHE_MEMORY_BYTES,
     MAX_MODEL_LEN,
     MINIMUM_KV_CACHE_MEMORY_BYTES,
+    STARTUP_MEMORY_GUARD_UTILIZATION,
     async_engine_kwargs,
     validate_kv_cache_memory_bytes,
 )
@@ -519,6 +520,8 @@ def _run_all(args: argparse.Namespace) -> dict:
             "kv_cache_dtype": "float32 via model dtype",
             "reservation_policy": "fixed kv_cache_memory_bytes",
             "uses_gpu_memory_utilization_reservation": False,
+            "startup_memory_guard_utilization": STARTUP_MEMORY_GUARD_UTILIZATION,
+            "startup_memory_guard_controls_reservation": False,
         },
         "numerical_validation": validation,
         "all_64_generated_tokens_equal": True,

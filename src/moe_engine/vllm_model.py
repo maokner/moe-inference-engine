@@ -15,7 +15,7 @@ from torch import nn
 from vllm.attention.layer import Attention
 from vllm.compilation.decorators import support_torch_compile
 from vllm.config import VllmConfig
-from vllm.model_executor.layers.fused_moe import FusedMoE
+from vllm.model_executor.layers.fused_moe import FusedMoE, activation_without_mul
 from vllm.model_executor.layers.linear import ReplicatedLinear
 from vllm.model_executor.layers.logits_processor import LogitsProcessor
 from vllm.model_executor.layers.vocab_parallel_embedding import (
@@ -87,7 +87,7 @@ class MiniMoEVllmSparseBlock(nn.Module):
             reduce_results=True,
             renormalize=True,
             quant_config=quant_config,
-            activation="gelu",
+            activation=activation_without_mul("gelu"),
             is_act_and_mul=False,
             has_bias=True,
             prefix=f"{prefix}.experts",
@@ -116,7 +116,14 @@ class MiniMoEVllmBlock(nn.Module):
         return hidden_states + self.moe(self.moe_norm(hidden_states))
 
 
-@support_torch_compile
+@support_torch_compile(
+    dynamic_arg_dims={
+        "input_ids": 0,
+        "positions": 0,
+        "intermediate_tensors": 0,
+        "inputs_embeds": 0,
+    }
+)
 class MiniMoEVllmModel(nn.Module):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = "model") -> None:
         super().__init__()
@@ -249,13 +256,27 @@ class MiniMoEForCausalLM(nn.Module, MixtureOfExperts):
                     source_fragment, target_fragment
                 )
                 parameter = params[parameter_name]
-                parameter.weight_loader(
-                    parameter,
-                    loaded_weight,
-                    parameter_name,
-                    shard_id=shard_id,
-                    expert_id=expert_id,
-                )
+                if parameter_name.endswith("_bias"):
+                    # vLLM 0.14.1's FusedMoE loader handles packed weights but
+                    # returns without copying expert biases. This comparison is
+                    # deliberately single-GPU, so copy the unsharded bias into
+                    # its packed expert slot directly.
+                    expert_bias = parameter.data[expert_id]
+                    if expert_bias.shape != loaded_weight.shape:
+                        raise ValueError(
+                            f"expert bias shape mismatch for {checkpoint_name}: "
+                            f"expected {tuple(expert_bias.shape)}, got "
+                            f"{tuple(loaded_weight.shape)}"
+                        )
+                    expert_bias.copy_(loaded_weight)
+                else:
+                    parameter.weight_loader(
+                        parameter,
+                        loaded_weight,
+                        parameter_name,
+                        shard_id=shard_id,
+                        expert_id=expert_id,
+                    )
                 loaded.add(parameter_name)
                 break
             else:

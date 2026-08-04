@@ -17,6 +17,10 @@ MINIMUM_KV_CACHE_MEMORY_BYTES = (
 )
 KV_CACHE_SAFETY_FACTOR = 2
 DEFAULT_KV_CACHE_MEMORY_BYTES = MINIMUM_KV_CACHE_MEMORY_BYTES * KV_CACHE_SAFETY_FACTOR
+# vLLM 0.14.1 checks this legacy utilization value at startup even when the
+# fixed-byte KV-cache path later ignores it. Keep the check below the available
+# memory without allowing it to size or reserve the cache.
+STARTUP_MEMORY_GUARD_UTILIZATION = 0.5
 
 
 def validate_kv_cache_memory_bytes(value: int) -> int:
@@ -51,6 +55,7 @@ def async_engine_kwargs(
         "enforce_eager": enforce_eager,
         "disable_log_stats": True,
         "kv_cache_memory_bytes": kv_cache_memory_bytes,
+        "gpu_memory_utilization": STARTUP_MEMORY_GUARD_UTILIZATION,
         "swap_space": 0,
         "max_logprobs": max_logprobs,
     }

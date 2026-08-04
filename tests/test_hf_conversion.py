@@ -186,7 +186,11 @@ def test_vllm_plugin_uses_only_vllm_runtime_kernels():
     assert "moe_engine.paged_attention" not in imports
     assert "from vllm.attention.layer import Attention" in source
     assert "from vllm.model_executor.layers.fused_moe import FusedMoE" in source
-    assert 'activation="gelu"' in source
+    assert 'activation=activation_without_mul("gelu")' in source
     assert "is_act_and_mul=False" in source
     assert "has_bias=True" in source
     assert "embedding_bias=self.lm_head.bias" in source
+    assert '"input_ids": 0' in source
+    assert '"positions": 0' in source
+    assert 'parameter_name.endswith("_bias")' in source
+    assert "expert_bias.copy_(loaded_weight)" in source
