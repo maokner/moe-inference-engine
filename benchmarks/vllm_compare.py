@@ -2,7 +2,7 @@
 
 Each system runs in a fresh process for every round. The process initializes and
 warms its runtime before measuring exactly one request. The starting system
-rotates by round so temporal GPU drift is paired across all three systems.
+rotates by round so temporal GPU drift is paired across the selected systems.
 """
 
 from __future__ import annotations
@@ -36,8 +36,9 @@ from moe_engine.vllm_runtime import (
 PROMPT_TOKENS = 62
 GENERATED_TOKENS = 64
 DEFAULT_ROUNDS = 21
-SYSTEMS = ("engine", "vllm", "vllm-eager")
-COMPARISONS = (
+DEFAULT_SYSTEMS = ("engine", "vllm-eager")
+FULL_SYSTEMS = ("engine", "vllm", "vllm-eager")
+FULL_COMPARISONS = (
     ("engine", "vllm"),
     ("engine", "vllm-eager"),
     ("vllm-eager", "vllm"),
@@ -103,9 +104,19 @@ class GpuMemoryMonitor:
         return self.peak_bytes
 
 
-def rotated_system_order(round_index: int) -> tuple[str, ...]:
-    shift = round_index % len(SYSTEMS)
-    return SYSTEMS[shift:] + SYSTEMS[:shift]
+def systems_for_comparison(comparison: str) -> tuple[str, ...]:
+    if comparison == "eager":
+        return DEFAULT_SYSTEMS
+    if comparison == "full":
+        return FULL_SYSTEMS
+    raise ValueError(f"unknown comparison: {comparison}")
+
+
+def rotated_system_order(
+    round_index: int, systems: tuple[str, ...] = DEFAULT_SYSTEMS
+) -> tuple[str, ...]:
+    shift = round_index % len(systems)
+    return systems[shift:] + systems[:shift]
 
 
 def paired_t_summary(deltas: list[float], unit: str) -> dict:
@@ -369,15 +380,17 @@ def _run_isolated(args: argparse.Namespace) -> dict:
     return result
 
 
-def _assert_round_token_equality(round_record: dict) -> list[int]:
+def _assert_round_token_equality(
+    round_record: dict, expected_systems: tuple[str, ...] = DEFAULT_SYSTEMS
+) -> list[int]:
     systems = round_record["systems"]
-    missing = set(SYSTEMS) - set(systems)
+    missing = set(expected_systems) - set(systems)
     if missing:
         raise RuntimeError(f"round is missing systems: {sorted(missing)}")
     reference = systems["engine"]["metrics"]["generated_token_ids"]
     mismatches = [
         system
-        for system in SYSTEMS
+        for system in expected_systems
         if systems[system]["metrics"]["generated_token_ids"] != reference
     ]
     if mismatches:
@@ -387,12 +400,14 @@ def _assert_round_token_equality(round_record: dict) -> list[int]:
     return reference
 
 
-def _assert_all_token_equality(rounds: list[dict]) -> list[int]:
+def _assert_all_token_equality(
+    rounds: list[dict], systems: tuple[str, ...] = DEFAULT_SYSTEMS
+) -> list[int]:
     if not rounds:
         raise RuntimeError("benchmark produced no rounds")
-    expected = _assert_round_token_equality(rounds[0])
+    expected = _assert_round_token_equality(rounds[0], systems)
     for round_record in rounds[1:]:
-        actual = _assert_round_token_equality(round_record)
+        actual = _assert_round_token_equality(round_record, systems)
         if actual != expected:
             raise RuntimeError(
                 f"engine greedy tokens changed in round {round_record['round_index']}"
@@ -418,9 +433,11 @@ def _system_summary(rounds: list[dict], system: str) -> dict:
     }
 
 
-def _paired_comparisons(rounds: list[dict]) -> dict:
+def _paired_comparisons(
+    rounds: list[dict], comparison_pairs: tuple[tuple[str, str], ...]
+) -> dict:
     comparisons = {}
-    for baseline, candidate in COMPARISONS:
+    for baseline, candidate in comparison_pairs:
         name = f"{candidate}_minus_{baseline}"
         fields = {}
         for field, (unit, preference) in PAIRED_FIELDS.items():
@@ -472,6 +489,8 @@ def _run_numerical_validation(args: argparse.Namespace, output: Path) -> dict:
         "--gpu-index",
         str(args.gpu_index),
         "--validate-native-vllm",
+        "--native-vllm-mode",
+        "eager" if args.comparison == "eager" else "both",
         "--kv-cache-memory-bytes",
         str(args.kv_cache_memory_bytes),
         "--output",
@@ -491,10 +510,14 @@ def _run_all(args: argparse.Namespace) -> dict:
     output.parent.mkdir(parents=True, exist_ok=True)
     validation_output = output.with_name(f"{output.stem}-validation{output.suffix}")
     validation = _run_numerical_validation(args, validation_output)
+    systems = systems_for_comparison(args.comparison)
+    comparison_pairs = (
+        (("engine", "vllm-eager"),) if args.comparison == "eager" else FULL_COMPARISONS
+    )
 
     rounds = []
     for round_index in range(args.rounds):
-        order = rotated_system_order(round_index)
+        order = rotated_system_order(round_index, systems)
         round_record = {
             "round_index": round_index,
             "execution_order": list(order),
@@ -506,10 +529,10 @@ def _run_all(args: argparse.Namespace) -> dict:
             )
             subprocess.run(_child_command(args, system, system_output), check=True)
             round_record["systems"][system] = json.loads(system_output.read_text())
-        _assert_round_token_equality(round_record)
+        _assert_round_token_equality(round_record, systems)
         rounds.append(round_record)
 
-    generated_tokens = _assert_all_token_equality(rounds)
+    generated_tokens = _assert_all_token_equality(rounds, systems)
     return {
         "workload": {
             "prompt": PROMPT,
@@ -522,7 +545,9 @@ def _run_all(args: argparse.Namespace) -> dict:
         },
         "methodology": {
             "rounds": args.rounds,
-            "rotation_period": len(SYSTEMS),
+            "comparison": args.comparison,
+            "systems": list(systems),
+            "rotation_period": len(systems),
             "fresh_process_per_system_per_round": True,
             "warmup_requests_per_measured_process": 1,
             "initialization_and_compilation_timed": False,
@@ -546,16 +571,16 @@ def _run_all(args: argparse.Namespace) -> dict:
         "all_64_generated_tokens_equal": True,
         "generated_token_ids": generated_tokens,
         "system_summary": {
-            system: _system_summary(rounds, system) for system in SYSTEMS
+            system: _system_summary(rounds, system) for system in systems
         },
-        "paired_comparisons": _paired_comparisons(rounds),
+        "paired_comparisons": _paired_comparisons(rounds, comparison_pairs),
         "raw_rounds": rounds,
     }
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--system", required=True, choices=[*SYSTEMS, "all"])
+    parser.add_argument("--system", required=True, choices=[*FULL_SYSTEMS, "all"])
     parser.add_argument("--device", required=True, choices=["cuda"])
     parser.add_argument(
         "--checkpoint", type=Path, default=Path("checkpoints/minimoe_sft.pt")
@@ -564,6 +589,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--model-dir", type=Path, default=Path("checkpoints/minimoe-hf")
     )
     parser.add_argument("--rounds", type=int, default=DEFAULT_ROUNDS)
+    parser.add_argument(
+        "--comparison",
+        choices=["eager", "full"],
+        default="eager",
+        help="systems included by --system all; use full for optimized vLLM too",
+    )
     parser.add_argument("--gpu-index", type=int, default=0)
     parser.add_argument(
         "--kv-cache-memory-bytes",

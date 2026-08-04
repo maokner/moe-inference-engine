@@ -31,6 +31,18 @@ The Triton MoE path improves throughput by **582%**.
 
 Full benchmark output is in [`results/`](results/).
 
+## vLLM comparison
+
+On the same A6000 workload, the custom engine reaches **96.63 tok/s** versus **58.26 tok/s** for eager vLLM.
+That is **1.66x eager vLLM throughput** with the same 64 greedy tokens across all 21 paired rounds.
+
+| Runtime | Median total time | Throughput |
+|---|---:|---:|
+| Custom engine | **662.30 ms** | **96.63 tok/s** |
+| Eager vLLM | 1,098.49 ms | 58.26 tok/s |
+
+The complete three-system methodology and raw A6000 evidence remain in [`results/vllm_comparison_a6000/`](results/vllm_comparison_a6000/).
+
 ## Run
 
 Place `minimoe_sft.pt` in `checkpoints/`, then run:
@@ -47,9 +59,9 @@ Optional modes:
 --moe reference|direct|auto
 ```
 
-## Hugging Face and vLLM comparison
+## Hugging Face and vLLM support
 
 The repository now includes a deterministic Hugging Face checkpoint converter, an exact local tiktoken tokenizer, a Transformers oracle, and a vLLM 0.14.x out-of-tree model plugin.
 The plugin uses vLLM's own attention and fused MoE runtime and does not reuse this engine's Triton kernels.
 
-See [`docs/vllm_compatibility.md`](docs/vllm_compatibility.md) for the compatibility inspection, native-plugin numerical gate, and the 21-round paired benchmark with rotating system order and fixed KV-cache memory.
+See [`docs/vllm_compatibility.md`](docs/vllm_compatibility.md) for the compatibility inspection, native-plugin numerical gate, and reproducible benchmark commands.

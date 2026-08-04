@@ -165,9 +165,16 @@ def _validate_native_vllm(
     hf_logprobs: torch.Tensor,
     expected_tokens: list[int],
     kv_cache_memory_bytes: int,
+    mode: str = "both",
 ) -> dict:
+    mode_configs = {
+        "eager": (("vllm-eager", True),),
+        "both": (("vllm", False), ("vllm-eager", True)),
+    }
+    if mode not in mode_configs:
+        raise ValueError(f"unknown native vLLM mode: {mode}")
     modes = {}
-    for name, enforce_eager in (("vllm", False), ("vllm-eager", True)):
+    for name, enforce_eager in mode_configs[mode]:
         native_logprobs, native_tokens = asyncio.run(
             _native_vllm_oracle(
                 model_dir,
@@ -278,6 +285,7 @@ def validate(args: argparse.Namespace) -> dict:
             hf_logprobs,
             reference_tokens,
             args.kv_cache_memory_bytes,
+            args.native_vllm_mode,
         )
 
     return {
@@ -345,6 +353,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
     parser.add_argument("--gpu-index", type=int, default=0)
     parser.add_argument("--validate-native-vllm", action="store_true")
+    parser.add_argument(
+        "--native-vllm-mode",
+        choices=["eager", "both"],
+        default="eager",
+        help="native vLLM modes included in the optional numerical gate",
+    )
     parser.add_argument(
         "--kv-cache-memory-bytes",
         type=int,

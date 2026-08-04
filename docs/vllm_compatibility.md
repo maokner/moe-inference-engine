@@ -87,13 +87,14 @@ uv run python scripts/validate_hf_parity.py \
 The validator requires exact converted checkpoint values and keeps the original CPU tolerances of `atol=1e-5, rtol=1e-5` for Hugging Face and `atol=1e-4, rtol=1e-4` for the engine.
 On CUDA, both the Hugging Face and engine SDPA paths use `atol=5e-4, rtol=1e-4` against the vendored `nn.MultiheadAttention` reference because the real-checkpoint A6000 diagnostic measured a shared maximum error of `3.44038e-4`, mean error of `2.23860e-5`, and zero argmax differences.
 Hugging Face and engine logits are still compared directly with `atol=1e-5, rtol=1e-5`.
-For both native vLLM modes it requests all 50,304 normalized next-token log-probabilities and compares them with the Hugging Face FP32 distribution using `atol=2e-2, rtol=2e-4`.
+The default validator and benchmark validate eager vLLM by requesting all 50,304 normalized next-token log-probabilities and comparing them with the Hugging Face FP32 distribution using `atol=2e-2, rtol=2e-4`.
+Pass `--native-vllm-mode both` to the validator when reproducing the complete three-system result.
 An untimed A6000 tolerance probe measured maximum and mean absolute normalized log-probability errors of `1.82190e-2` and `6.48891e-3` for optimized vLLM, and `1.73550e-2` and `6.30710e-3` for eager vLLM.
 Both complete 64-token greedy sequences matched during that probe.
 The absolute tolerance retains a narrow margin over the observed fused FP32 kernel error while still checking the complete attention, router, biased GELU expert, tied output-weight, and learned output-bias path.
-All five 64-token greedy sequences must match exactly.
+Every selected runtime must produce the same 64-token greedy sequence.
 
-Run all three benchmarks in isolated processes:
+Run the custom engine and eager vLLM in isolated processes:
 
 ```bash
 uv sync --extra vllm
@@ -114,6 +115,9 @@ The harness accepts every non-empty chunk, assigns one observed wall-clock deliv
 Co-delivered tokens therefore have zero user-visible interval without disabling vLLM's default asynchronous scheduling.
 The report retains raw per-round results and provides paired per-round deltas with two-sided Student-t 95% confidence intervals for time to first token, mean inter-token latency, total generation time, and throughput.
 
+The default comparison is eager vLLM because it is the closest no-compilation runtime baseline.
+To reproduce the retained three-system evidence, add `--comparison full`; this also runs the optimized vLLM path and includes it in the numerical gate, rotating rounds, and paired report.
+
 The minimum FP32 KV capacity is `1024 positions * 6 layers * 8 heads * 96 head dimensions * 2 for K and V * 4 bytes = 37,748,736 bytes`.
 vLLM receives a fixed default reservation of 75,497,472 bytes, which is a two-times safety margin and can be changed with `--kv-cache-memory-bytes`.
 vLLM 0.14.1 still checks `gpu_memory_utilization` against free memory during early startup, even though its fixed-byte cache branch later ignores that value.
@@ -122,4 +126,4 @@ The report marks that guard as non-reserving and records the fixed reserved KV b
 The comparison does not use the previous 90-percent utilization reservation policy.
 
 No local MPS, local vLLM, or CUDA model workload is part of the implementation test suite.
-Runtime validation remains pending until the parent task authorizes the A6000 run.
+The retained A6000 validation is in [`results/vllm_comparison_a6000/`](../results/vllm_comparison_a6000/).

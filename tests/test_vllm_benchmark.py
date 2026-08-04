@@ -57,26 +57,37 @@ def _system_result(system: str, tokens: list[int], value: float = 1.0) -> dict:
     }
 
 
-def test_round_order_rotates_every_system_through_first_position():
+def test_default_round_order_rotates_engine_and_eager_vllm():
     assert vllm_compare.rotated_system_order(0) == (
         "engine",
-        "vllm",
         "vllm-eager",
     )
     assert vllm_compare.rotated_system_order(1) == (
-        "vllm",
         "vllm-eager",
         "engine",
     )
     assert vllm_compare.rotated_system_order(2) == (
-        "vllm-eager",
         "engine",
-        "vllm",
+        "vllm-eager",
     )
-    assert vllm_compare.rotated_system_order(3) == (
+
+
+def test_full_round_order_rotates_every_system_through_first_position():
+    systems = vllm_compare.FULL_SYSTEMS
+    assert vllm_compare.rotated_system_order(0, systems) == (
         "engine",
         "vllm",
         "vllm-eager",
+    )
+    assert vllm_compare.rotated_system_order(1, systems) == (
+        "vllm",
+        "vllm-eager",
+        "engine",
+    )
+    assert vllm_compare.rotated_system_order(2, systems) == (
+        "vllm-eager",
+        "engine",
+        "vllm",
     )
 
 
@@ -95,11 +106,11 @@ def test_paired_statistics_use_per_round_candidate_minus_baseline_deltas():
                 },
             }
         )
-    paired = vllm_compare._paired_comparisons(rounds)
-    ttft = paired["vllm_minus_engine"]["time_to_first_token_ms"]
-    assert ttft["per_round_delta"] == [-2.0, -2.0, -2.0]
-    assert ttft["mean_delta"] == -2.0
-    assert ttft["ci95"] == [-2.0, -2.0]
+    paired = vllm_compare._paired_comparisons(rounds, (("engine", "vllm-eager"),))
+    ttft = paired["vllm-eager_minus_engine"]["time_to_first_token_ms"]
+    assert ttft["per_round_delta"] == [-1.0, -1.0, -1.0]
+    assert ttft["mean_delta"] == -1.0
+    assert ttft["ci95"] == [-1.0, -1.0]
     assert ttft["method"] == "paired two-sided Student-t interval"
 
 
@@ -125,8 +136,7 @@ def test_token_mismatch_aborts_before_summary_creation():
         "round_index": 7,
         "systems": {
             "engine": _system_result("engine", [1] * 64),
-            "vllm": _system_result("vllm", [1] * 63 + [2]),
-            "vllm-eager": _system_result("vllm-eager", [1] * 64),
+            "vllm-eager": _system_result("vllm-eager", [1] * 63 + [2]),
         },
     }
     with pytest.raises(RuntimeError, match="greedy token mismatch in round 7"):
@@ -212,28 +222,56 @@ def test_all_mode_records_rotating_raw_rounds(monkeypatch, tmp_path: Path):
         checkpoint=Path("checkpoint.pt"),
         model_dir=Path("model"),
         rounds=3,
+        comparison="eager",
         gpu_index=0,
         kv_cache_memory_bytes=DEFAULT_KV_CACHE_MEMORY_BYTES,
     )
     report = vllm_compare._run_all(args)
     assert calls == [
         "engine",
-        "vllm",
         "vllm-eager",
-        "vllm",
         "vllm-eager",
         "engine",
-        "vllm-eager",
         "engine",
-        "vllm",
+        "vllm-eager",
     ]
     assert [round_["execution_order"] for round_ in report["raw_rounds"]] == [
-        ["engine", "vllm", "vllm-eager"],
-        ["vllm", "vllm-eager", "engine"],
-        ["vllm-eager", "engine", "vllm"],
+        ["engine", "vllm-eager"],
+        ["vllm-eager", "engine"],
+        ["engine", "vllm-eager"],
     ]
     assert report["all_64_generated_tokens_equal"] is True
     assert report["methodology"]["rounds"] == 3
+    assert report["methodology"]["comparison"] == "eager"
+    assert report["methodology"]["systems"] == ["engine", "vllm-eager"]
+
+
+@pytest.mark.parametrize(
+    ("comparison", "expected_mode"), (("eager", "eager"), ("full", "both"))
+)
+def test_numerical_gate_tracks_selected_comparison(
+    monkeypatch, tmp_path: Path, comparison: str, expected_mode: str
+):
+    captured = {}
+
+    def fake_run(command, check):
+        assert check is True
+        captured["command"] = command
+        output = Path(command[command.index("--output") + 1])
+        output.write_text(json.dumps({"native_vllm_numerical_validation_passed": True}))
+
+    monkeypatch.setattr(vllm_compare.subprocess, "run", fake_run)
+    args = argparse.Namespace(
+        checkpoint=Path("checkpoint.pt"),
+        model_dir=Path("model"),
+        comparison=comparison,
+        gpu_index=0,
+        kv_cache_memory_bytes=DEFAULT_KV_CACHE_MEMORY_BYTES,
+    )
+    report = vllm_compare._run_numerical_validation(args, tmp_path / "validation.json")
+    command = captured["command"]
+    assert command[command.index("--native-vllm-mode") + 1] == expected_mode
+    assert report["native_vllm_numerical_validation_passed"] is True
 
 
 def test_all_mode_refuses_summary_when_child_tokens_differ(monkeypatch, tmp_path):
@@ -246,7 +284,7 @@ def test_all_mode_refuses_summary_when_child_tokens_differ(monkeypatch, tmp_path
     def fake_run(command, check):
         system = command[command.index("--system") + 1]
         output = Path(command[command.index("--output") + 1])
-        tokens = [1] * 64 if system != "vllm" else [1] * 63 + [2]
+        tokens = [1] * 64 if system != "vllm-eager" else [1] * 63 + [2]
         output.write_text(json.dumps(_system_result(system, tokens)))
 
     monkeypatch.setattr(vllm_compare.subprocess, "run", fake_run)
@@ -255,6 +293,7 @@ def test_all_mode_refuses_summary_when_child_tokens_differ(monkeypatch, tmp_path
         checkpoint=Path("checkpoint.pt"),
         model_dir=Path("model"),
         rounds=2,
+        comparison="eager",
         gpu_index=0,
         kv_cache_memory_bytes=DEFAULT_KV_CACHE_MEMORY_BYTES,
     )
@@ -267,7 +306,11 @@ def test_parser_defaults_to_21_rounds_and_fixed_cache():
         ["--system", "all", "--device", "cuda"]
     )
     assert args.rounds == 21
+    assert args.comparison == "eager"
     assert args.kv_cache_memory_bytes == DEFAULT_KV_CACHE_MEMORY_BYTES
+
+    validator_args = validate_hf_parity.build_parser().parse_args([])
+    assert validator_args.native_vllm_mode == "eager"
 
 
 def test_native_validator_requests_full_vocabulary_logprobs_without_importing_vllm():
