@@ -41,7 +41,6 @@ That is **1.66x eager vLLM throughput** with the same 64 greedy tokens across al
 | Custom engine | **662.30 ms** | **96.63 tok/s** |
 | Eager vLLM | 1,098.49 ms | 58.26 tok/s |
 
-The complete three-system methodology and raw A6000 evidence remain in [`results/vllm_comparison_a6000/`](results/vllm_comparison_a6000/).
 
 ## Run
 
