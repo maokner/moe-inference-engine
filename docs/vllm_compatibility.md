@@ -82,7 +82,9 @@ uv run python scripts/validate_hf_parity.py \
   --output results/vllm_comparison/parity.json
 ```
 
-The validator requires exact converted checkpoint values, Hugging Face versus original logits within `atol=1e-5, rtol=1e-5`, and engine versus original logits within `atol=1e-4, rtol=1e-4`.
+The validator requires exact converted checkpoint values and keeps the original CPU tolerances of `atol=1e-5, rtol=1e-5` for Hugging Face and `atol=1e-4, rtol=1e-4` for the engine.
+On CUDA, both the Hugging Face and engine SDPA paths use `atol=5e-4, rtol=1e-4` against the vendored `nn.MultiheadAttention` reference because the real-checkpoint A6000 diagnostic measured a shared maximum error of `3.44038e-4`, mean error of `2.23860e-5`, and zero argmax differences.
+Hugging Face and engine logits are still compared directly with `atol=1e-5, rtol=1e-5`.
 For both native vLLM modes it requests all 50,304 normalized next-token log-probabilities and compares them with the Hugging Face FP32 distribution using `atol=2e-3, rtol=2e-4`.
 The wider vLLM tolerance permits fused-kernel reduction-order differences while still checking the complete attention, router, biased GELU expert, tied output-weight, and learned output-bias path.
 All five 64-token greedy sequences must match exactly.
