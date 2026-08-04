@@ -7,10 +7,10 @@ import math
 from dataclasses import dataclass
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as F
 
-from moe_engine import paged_attention
+from moe_engine import fused_moe, paged_attention
 
 EOS_TOKEN_ID = 50256
 
@@ -34,7 +34,9 @@ class KVCache:
     match the model's device and dtype.
     """
 
-    def __init__(self, config: ModelConfig, batch_size: int, device, dtype=torch.float32):
+    def __init__(
+        self, config: ModelConfig, batch_size: int, device, dtype=torch.float32
+    ):
         head_dim = config.hidden_dim // config.num_heads
         shape = (
             config.num_layers,
@@ -190,7 +192,9 @@ class PagedKVCache:
             return (
                 pool[layer_idx, block_ids]
                 .transpose(0, 1)
-                .reshape(self.allocator.num_heads, -1, self.allocator.head_dim)[:, :length]
+                .reshape(self.allocator.num_heads, -1, self.allocator.head_dim)[
+                    :, :length
+                ]
                 .unsqueeze(0)
             )
 
@@ -279,16 +283,165 @@ class Expert(nn.Module):
 
 
 class MoEFeedForward(nn.Module):
-    """Top-k expert routing with gather and scatter-add."""
+    """PyTorch MoE oracle plus fixed-shape Triton decode dispatch."""
 
-    def __init__(self, dim, hidden_dim, num_experts, top_k):
+    def __init__(self, dim, hidden_dim, num_experts, top_k, mode="auto"):
         super().__init__()
+        if mode not in ("auto", "direct", "reference"):
+            raise ValueError(f"unknown MoE mode {mode!r}")
+        self.mode = mode
+        self.dim = dim
+        self.hidden_dim = hidden_dim
         self.top_k = top_k
         self.num_experts = num_experts
-        self.experts = nn.ModuleList(Expert(dim, hidden_dim) for _ in range(num_experts))
+        self.experts = nn.ModuleList(
+            Expert(dim, hidden_dim) for _ in range(num_experts)
+        )
         self.router = nn.Linear(dim, num_experts, bias=False)
 
-    def forward(self, x):
+        # These non-persistent buffers are one fixed workspace per layer.
+        # They move with the module but never alter checkpoint keys or values.
+        self.register_buffer(
+            "_router_logits",
+            torch.empty(num_experts, dtype=torch.float32),
+            persistent=False,
+        )
+        self.register_buffer(
+            "_expert_ids", torch.empty(top_k, dtype=torch.int32), persistent=False
+        )
+        self.register_buffer(
+            "_route_weights", torch.empty(top_k, dtype=torch.float32), persistent=False
+        )
+        self.register_buffer(
+            "_expert_hidden",
+            torch.empty(top_k, hidden_dim, dtype=torch.float32),
+            persistent=False,
+        )
+        self.register_buffer(
+            "_direct_out", torch.empty(dim, dtype=torch.float32), persistent=False
+        )
+
+        # The checkpoint exposes one parameter per expert.  Re-home those
+        # parameters into four canonical contiguous storages once, preserving
+        # every public state-dict name as a non-overlapping Parameter view.
+        # Triton can then select expert e by a device-side canonical offset
+        # without keeping a stacked duplicate or packing weights per token.
+        self._pack_expert_parameters()
+        self.register_load_state_dict_post_hook(self._repack_after_load)
+
+    def _pack_parameter_group(
+        self, layer_index: int, parameter_name: str
+    ) -> torch.Tensor:
+        parameters = [
+            getattr(expert.net[layer_index], parameter_name) for expert in self.experts
+        ]
+        shape = parameters[0].shape
+        if any(parameter.shape != shape for parameter in parameters):
+            raise ValueError("all experts must have identical parameter shapes")
+        packed = torch.empty(
+            (self.num_experts, *shape),
+            device=parameters[0].device,
+            dtype=parameters[0].dtype,
+        )
+        with torch.no_grad():
+            for expert_id, parameter in enumerate(parameters):
+                packed[expert_id].copy_(parameter)
+                setattr(
+                    self.experts[expert_id].net[layer_index],
+                    parameter_name,
+                    nn.Parameter(
+                        packed[expert_id], requires_grad=parameter.requires_grad
+                    ),
+                )
+        return packed
+
+    def _pack_expert_parameters(self) -> None:
+        """Create canonical storages while retaining legacy parameter names."""
+        self._expert_storage = {
+            "w1": self._pack_parameter_group(0, "weight"),
+            "b1": self._pack_parameter_group(0, "bias"),
+            "w2": self._pack_parameter_group(2, "weight"),
+            "b2": self._pack_parameter_group(2, "bias"),
+        }
+
+    def _repack_after_load(self, _module, _incompatible_keys) -> None:
+        # Covers load_state_dict(assign=True) as well as the normal copy path.
+        self._pack_expert_parameters()
+
+    def _apply(self, fn, recurse=True):
+        # Module._apply may replace each Parameter independently.  Repacking
+        # after a device/dtype conversion restores the canonical layout.
+        result = super()._apply(fn, recurse=recurse)
+        self._pack_expert_parameters()
+        return result
+
+    def set_mode(self, mode: str) -> None:
+        if mode not in ("auto", "direct", "reference"):
+            raise ValueError(f"unknown MoE mode {mode!r}")
+        self.mode = mode
+
+    def _direct_supported(self, x: torch.Tensor) -> bool:
+        return (
+            fused_moe.is_supported(
+                x,
+                num_experts=self.num_experts,
+                top_k=self.top_k,
+                expert_hidden_dim=self.hidden_dim,
+            )
+            and self._has_direct_layout()
+        )
+
+    def _has_direct_layout(self) -> bool:
+        return fused_moe.has_canonical_layout(
+            self.router.weight,
+            self._expert_storage["w1"],
+            self._expert_storage["b1"],
+            self._expert_storage["w2"],
+            self._expert_storage["b2"],
+            self._router_logits,
+            self._expert_ids,
+            self._route_weights,
+            self._expert_hidden,
+            self._direct_out,
+        )
+
+    def preflight_direct_decode(self, *, batch_size: int) -> None:
+        """Reject an unsupported forced decode before any cache mutation."""
+        if self.mode != "direct":
+            return
+        router = self.router.weight
+        supported = fused_moe.is_configuration_supported(
+            device=router.device,
+            dtype=router.dtype,
+            batch_size=batch_size,
+            hidden_dim=self.dim,
+            num_experts=self.num_experts,
+            top_k=self.top_k,
+            expert_hidden_dim=self.hidden_dim,
+        )
+        supported = supported and self._has_direct_layout()
+        if not supported:
+            self._raise_direct_unsupported()
+
+    @staticmethod
+    def _raise_direct_unsupported() -> None:
+        raise RuntimeError(
+            "MoE mode 'direct' needs one-token batch-one CUDA float32 decode "
+            "with shape 768x8x2x3072 and Triton; use 'auto' for automatic "
+            "fallback or 'reference' for the PyTorch oracle"
+        )
+
+    def uses_direct(self, x: torch.Tensor, *, decode: bool) -> bool:
+        """Resolve reference/direct/auto without reading device results."""
+        if not decode or self.mode == "reference":
+            return False
+        supported = self._direct_supported(x)
+        if self.mode == "direct" and not supported:
+            self._raise_direct_unsupported()
+        return supported
+
+    def _forward_reference(self, x: torch.Tensor) -> torch.Tensor:
+        """Vectorized prefill and correctness oracle for direct decode."""
         batch, seq_len, dim = x.shape
         flat_x = x.reshape(-1, dim)
 
@@ -307,6 +460,26 @@ class MoEFeedForward(nn.Module):
             out.index_add_(0, token_ids, weight * expert(flat_x[token_ids]))
         return out.reshape(batch, seq_len, dim)
 
+    def _forward_direct(self, x: torch.Tensor) -> torch.Tensor:
+        return fused_moe.decode(
+            x,
+            self.router.weight,
+            self._expert_storage["w1"],
+            self._expert_storage["b1"],
+            self._expert_storage["w2"],
+            self._expert_storage["b2"],
+            router_logits=self._router_logits,
+            expert_ids=self._expert_ids,
+            route_weights=self._route_weights,
+            hidden=self._expert_hidden,
+            out=self._direct_out,
+        )
+
+    def forward(self, x, *, decode=False):
+        if self.uses_direct(x, decode=decode):
+            return self._forward_direct(x)
+        return self._forward_reference(x)
+
 
 class TransformerMoEBlock(nn.Module):
     def __init__(self, config: ModelConfig):
@@ -320,7 +493,8 @@ class TransformerMoEBlock(nn.Module):
 
     def forward(self, x, cache, layer_idx, position):
         x = x + self.attention(self.attn_norm(x), cache, layer_idx, position)
-        x = x + self.moe(self.moe_norm(x))
+        normed = self.moe_norm(x)
+        x = x + self.moe(normed, decode=position > 0 and normed.shape[1] == 1)
         return x
 
 
@@ -330,7 +504,9 @@ class Model(nn.Module):
         self.config = config
         self.max_seq_length = config.max_seq_length
         self.token_embedding = nn.Embedding(config.vocab_size, config.hidden_dim)
-        self.positional_embedding = nn.Embedding(config.max_seq_length, config.hidden_dim)
+        self.positional_embedding = nn.Embedding(
+            config.max_seq_length, config.hidden_dim
+        )
         self.output_projection = nn.Linear(config.hidden_dim, config.vocab_size)
         self.MoEBlocks = nn.ModuleList(
             TransformerMoEBlock(config) for _ in range(config.num_layers)
@@ -344,13 +520,24 @@ class Model(nn.Module):
         weight = self.token_embedding.weight
         return KVCache(self.config, batch_size, weight.device, weight.dtype)
 
+    def set_moe_mode(self, mode: str) -> "Model":
+        """Set reference, forced-direct, or automatic MoE dispatch on all layers."""
+        for block in self.MoEBlocks:
+            block.moe.set_mode(mode)
+        return self
+
     def new_block_allocator(
         self, num_blocks: int, block_size: int = 16, attention_mode: str = "auto"
     ) -> BlockAllocator:
         """Create a block pool matching the model's device and dtype."""
         weight = self.token_embedding.weight
         return BlockAllocator(
-            self.config, num_blocks, block_size, weight.device, weight.dtype, attention_mode
+            self.config,
+            num_blocks,
+            block_size,
+            weight.device,
+            weight.dtype,
+            attention_mode,
         )
 
     def forward(self, token_ids, cache):
@@ -358,6 +545,13 @@ class Model(nn.Module):
         batch, seq_len = token_ids.shape
         position = cache.position
         assert position + seq_len <= self.max_seq_length, "KV cache is full"
+
+        # Forced direct MoE failures must occur before attention in layer zero
+        # can write K/V or reserve a paged-cache block.  Position zero remains
+        # prompt prefill and always uses the PyTorch MoE oracle.
+        if position > 0 and seq_len == 1:
+            for block in self.MoEBlocks:
+                block.moe.preflight_direct_decode(batch_size=batch)
 
         # New tokens start at the current cache position.
         pos = torch.arange(position, position + seq_len, device=token_ids.device)
@@ -371,7 +565,9 @@ class Model(nn.Module):
         return self.output_projection(x)
 
     @torch.no_grad()
-    def generate(self, token_ids, max_new_tokens, temperature=1.0, top_k=None, cache=None):
+    def generate(
+        self, token_ids, max_new_tokens, temperature=1.0, top_k=None, cache=None
+    ):
         """Generate one sequence. The caller owns any supplied cache."""
         if not math.isfinite(temperature) or temperature < 0:
             raise ValueError("temperature must be a finite non-negative number")
@@ -410,7 +606,9 @@ class Model(nn.Module):
                 if top_k is not None:
                     sample_top_k = min(top_k, next_token_logits.size(-1))
                     values, _ = torch.topk(next_token_logits, sample_top_k)
-                    next_token_logits[next_token_logits < values[:, [-1]]] = -float("inf")
+                    next_token_logits[next_token_logits < values[:, [-1]]] = -float(
+                        "inf"
+                    )
                 probs = F.softmax(next_token_logits, dim=-1)
                 next_token = torch.multinomial(probs, num_samples=1)
 

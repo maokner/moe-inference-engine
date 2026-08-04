@@ -36,6 +36,7 @@ COMPONENTS = (
     "moe_routing_top2",
     "expert_mlp_execution",
     "route_weight_combination",
+    "fused_moe_decode",
     "layernorm_residual_output",
 )
 COMPONENT_LABELS = {
@@ -43,6 +44,7 @@ COMPONENT_LABELS = {
     "moe_routing_top2": "MoE routing/top-2 selection",
     "expert_mlp_execution": "Expert MLP execution",
     "route_weight_combination": "Route-weight combination",
+    "fused_moe_decode": "Fused MoE decode",
     "layernorm_residual_output": "LayerNorm/residual/output",
 }
 
@@ -78,8 +80,12 @@ def profiled_attention_forward(self, x, cache, layer_idx, position):
         return self.out_proj(out)
 
 
-def profiled_moe_forward(self, x):
+def profiled_moe_forward(self, x, *, decode=False):
     """MoE oracle path split into routing, expert, and combination scopes."""
+    if self.uses_direct(x, decode=decode):
+        with record_function("fused_moe_decode"):
+            return self._forward_direct(x)
+
     batch, seq_len, dim = x.shape
     flat_x = x.reshape(-1, dim)
 
@@ -114,7 +120,7 @@ def profiled_block_forward(self, x, cache, layer_idx, position):
     with record_function("layernorm_residual_output"):
         x = x + attention_out
         normed = self.moe_norm(x)
-    moe_out = self.moe(normed)
+    moe_out = self.moe(normed, decode=position > 0 and normed.shape[1] == 1)
     with record_function("layernorm_residual_output"):
         return x + moe_out
 
@@ -358,12 +364,14 @@ def markdown_summary(report: dict) -> str:
     )
     dominant = components[0]
     component_map = {item["component"]: item for item in components}
+    direct_active = component_map["fused_moe_decode"]["calls"] > 0
     moe_ms = sum(
         component_map[name]["instrumented_ms_per_step"]
         for name in (
             "moe_routing_top2",
             "expert_mlp_execution",
             "route_weight_combination",
+            "fused_moe_decode",
         )
     )
     moe_percent = sum(
@@ -372,22 +380,53 @@ def markdown_summary(report: dict) -> str:
             "moe_routing_top2",
             "expert_mlp_execution",
             "route_weight_combination",
+            "fused_moe_decode",
         )
     )
-    python_loop_ms = profiled["expert_loop"]["unattributed_python_cpu_ms_per_step"]
-    python_loop_clean_percent = 100 * python_loop_ms / clean["median_ms"]
-    python_loop_conclusion = (
-        "Pure Python loop overhead is not the dominant bottleneck."
-        if python_loop_clean_percent < 50
-        else "Pure Python loop overhead is the dominant bottleneck."
-    )
-    if moe_percent >= 50:
+    expert_loop = profiled["expert_loop"]
+    if expert_loop is None:
+        python_loop_ms = 0.0
+        python_loop_clean_percent = 0.0
+        python_loop_detail = (
+            "The PyTorch expert-loop scope was not active in this profile."
+        )
+        python_loop_conclusion = "The fused path contains no Python expert loop."
+    else:
+        python_loop_ms = expert_loop["unattributed_python_cpu_ms_per_step"]
+        python_loop_clean_percent = 100 * python_loop_ms / clean["median_ms"]
+        python_loop_detail = (
+            f"The existing per-expert loop itself has {python_loop_ms:.3f} ms per step "
+            "of profiler-unattributed Python CPU time "
+            f"({python_loop_clean_percent:.1f}% of clean median latency); its nested "
+            "tensor operations and kernel launches are reported in the component rows."
+        )
+        python_loop_conclusion = (
+            "Pure Python loop overhead is not the dominant bottleneck."
+            if python_loop_clean_percent < 50
+            else "Pure Python loop overhead is the dominant bottleneck."
+        )
+    if direct_active:
+        moe_conclusion = (
+            "The combined value is the direct MoE critical-path attribution for "
+            "comparison with the reference profile."
+        )
+        implementation_summary = [
+            "The fixed-shape direct path uses three Triton launches per layer and keeps both selected expert ids and weights on device.",
+            "Compare this report with an otherwise identical --moe reference run before drawing a performance conclusion.",
+        ]
+    elif moe_percent >= 50:
         moe_conclusion = "The combined MoE path dominates instrumented decode time, so it is the next kernel target."
+        implementation_summary = [
+            "The next MoE kernel should target batch-one decode directly: compute the float32 8-way router and normalized top-2 weights, run only the two selected 768x3072x768 GELU expert MLPs, and combine their weighted outputs without torch.where, per-expert Python dispatch, CPU reads of route counts, or index_add_ launches.",
+            "A practical first design uses three fixed-shape Triton kernels per layer: router plus top-2 writes two device-resident ids and weights; selected-expert W1 plus GELU writes a [2, 3072] intermediate; selected-expert W2 plus weighted reduction writes one [768] output row.",
+            "Keep the existing PyTorch expert loop as the correctness oracle and require logit and greedy-token parity before benchmarking.",
+        ]
     else:
         moe_conclusion = (
             "The combined MoE path does not dominate instrumented decode time, so a fused MoE kernel "
             "should not precede optimization of the larger measured component."
         )
+        implementation_summary = []
     nonzero = next(
         (
             item
@@ -412,6 +451,7 @@ def markdown_summary(report: dict) -> str:
         f"Hardware: {report['hardware'].get('gpu', report['hardware']['device'])}.",
         f"Checkpoint step: {report['checkpoint_step']}.",
         f"Workload: {report['prompt_tokens']}-token benchmark prompt followed by {report['steps']} one-token greedy decode steps.",
+        f"MoE mode: {report.get('moe', 'reference')}.",
         f"Clean median decode latency: {clean['median_ms']:.3f} ms ({clean['tokens_per_second']:.2f} tok/s).",
         f"Instrumented total: {profiled['instrumented_total_ms_per_step']:.3f} ms per step using {profiled['timing_basis']}.",
         "The component timings below come from the instrumented profiler run and are not uninstrumented throughput measurements.",
@@ -427,17 +467,15 @@ def markdown_summary(report: dict) -> str:
     lines.extend(
         [
             "",
-            f"Combined MoE routing, expert, and route-combination work: {moe_ms:.3f} ms per step ({moe_percent:.1f}% of instrumented decode time).",
+            f"Combined MoE work: {moe_ms:.3f} ms per step ({moe_percent:.1f}% of instrumented decode time).",
             moe_conclusion,
             f"Largest component scope: {COMPONENT_LABELS[dominant['component']]} at {dominant['instrumented_ms_per_step']:.3f} ms per step ({dominant['percent_of_instrumented_step']:.1f}% of instrumented decode time).",
-            f"The existing per-expert loop itself has {python_loop_ms:.3f} ms per step of profiler-unattributed Python CPU time ({python_loop_clean_percent:.1f}% of clean median latency); its nested tensor operations and kernel launches are reported in the component rows.",
+            python_loop_detail,
             python_loop_conclusion,
             nonzero_summary,
             f"CPU operator self time: {profiled['cpu_operator_self_ms_per_step']:.3f} ms per step across {profiled['cpu_operator_calls_per_step']:.1f} calls per step.",
             launch_summary,
-            "The next MoE kernel should target batch-one decode directly: compute the float32 8-way router and normalized top-2 weights, run only the two selected 768x3072x768 GELU expert MLPs, and combine their weighted outputs without torch.where, per-expert Python dispatch, CPU reads of route counts, or index_add_ launches.",
-            "A practical first design uses three fixed-shape Triton kernels per layer: router plus top-2 writes two device-resident ids and weights; selected-expert W1 plus GELU writes a [2, 3072] intermediate; selected-expert W2 plus weighted reduction writes one [768] output row.",
-            "Keep the existing PyTorch expert loop as the correctness oracle and require logit and greedy-token parity before benchmarking.",
+            *implementation_summary,
             "",
             "## Limitations",
             "",
@@ -455,6 +493,12 @@ def main() -> None:
     parser.add_argument("--warmup-steps", type=int, default=16)
     parser.add_argument("--steps", type=int, default=32)
     parser.add_argument(
+        "--moe",
+        choices=["auto", "direct", "reference"],
+        default="auto",
+        help="fixed-shape Triton decode, PyTorch oracle, or automatic fallback",
+    )
+    parser.add_argument(
         "--output-dir", type=Path, default=Path("results/contiguous_decode_profile")
     )
     args = parser.parse_args()
@@ -470,6 +514,7 @@ def main() -> None:
         parser.error("MPS was requested but is not available")
 
     model, _, metadata = load_engine_model(args.checkpoint, args.device)
+    model.set_moe_mode(args.moe)
     enc = tiktoken.get_encoding("gpt2")
     prompt_ids = torch.tensor(enc.encode(PROMPT), device=args.device)
     if len(prompt_ids) != 62:
@@ -514,6 +559,7 @@ def main() -> None:
         "warmup_steps": args.warmup_steps,
         "steps": args.steps,
         "cache": "contiguous",
+        "moe": args.moe,
         "decode": "one token per forward, greedy argmax",
         "outputs_match": True,
         "generated_token_ids": clean_tokens[0].tolist(),

@@ -1,0 +1,19 @@
+{
+  "deterministic_fields_equal": {
+    "text": true,
+    "new_tokens": true,
+    "finish_reason": true
+  },
+  "reference": {
+    "text": " the model is not only efficient but also has a high degree of accuracy.\n\nThe model's performance is also evaluated by comparing it to a model that has been trained on a large dataset of real-world data. The model's performance is evaluated by comparing it to a model that has been trained on a large dataset",
+    "new_tokens": 64,
+    "finish_reason": "length",
+    "tokens_per_sec": 10.9
+  },
+  "direct": {
+    "text": " the model is not only efficient but also has a high degree of accuracy.\n\nThe model's performance is also evaluated by comparing it to a model that has been trained on a large dataset of real-world data. The model's performance is evaluated by comparing it to a model that has been trained on a large dataset",
+    "new_tokens": 64,
+    "finish_reason": "length",
+    "tokens_per_sec": 15.4
+  }
+}

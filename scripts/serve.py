@@ -2,7 +2,8 @@
 
 Usage:
     uv run python scripts/serve.py
-    uv run python scripts/serve.py --cache paged --paged-attention direct
+    uv run python scripts/serve.py --device cuda --moe reference
+    uv run python scripts/serve.py --device cuda --cache paged --paged-attention direct
     curl -s localhost:8000/generate -d '{"prompt": "The capital of France is"}'
 """
 
@@ -38,7 +39,7 @@ enc = tiktoken.get_encoding("gpt2")
 model = None  # Initialized in main().
 cache_mode = "contiguous"
 allocator = None  # Shared KV block pool, initialized only for paged mode.
-device = pick_device()
+device = "cpu"  # Safe import-time and CLI default; accelerators are explicit.
 
 # The pool holds one max-length sequence, so serialize generation requests.
 generate_lock = threading.Lock()
@@ -62,6 +63,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument(
+        "--device",
+        choices=["auto", "cpu", "mps", "cuda"],
+        default="cpu",
+        help="execution device (default: CPU; CUDA and MPS require explicit selection)",
+    )
+    parser.add_argument(
         "--cache",
         choices=["contiguous", "paged"],
         default="contiguous",
@@ -72,6 +79,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["auto", "direct", "gather"],
         default="auto",
         help="paged cache only: direct Triton kernel, gather oracle, or automatic fallback",
+    )
+    parser.add_argument(
+        "--moe",
+        choices=["auto", "direct", "reference"],
+        default="auto",
+        help="MoE decode: fixed-shape Triton kernel, PyTorch oracle, or automatic fallback",
     )
     return parser
 
@@ -119,10 +132,16 @@ def generate(req: GenerateRequest):
 
 
 def main() -> None:
-    global model, cache_mode, allocator
+    global model, cache_mode, allocator, device
     args = build_parser().parse_args()
 
+    device = pick_device() if args.device == "auto" else args.device
+    if device == "cuda" and not torch.cuda.is_available():
+        raise SystemExit("CUDA was requested but is not available")
+    if device == "mps" and not torch.backends.mps.is_available():
+        raise SystemExit("MPS was requested but is not available")
     model, _, metadata = load_engine_model(args.checkpoint, device)
+    model.set_moe_mode(args.moe)
     cache_mode = args.cache
     allocator = None
     if cache_mode == "paged":
@@ -135,7 +154,8 @@ def main() -> None:
             attention_mode=args.paged_attention,
         )
     print(
-        f"Serving checkpoint step {metadata['step']} on {device} with {cache_mode} KV cache"
+        f"Serving checkpoint step {metadata['step']} on {device} with {cache_mode} "
+        f"KV cache and {args.moe} MoE"
     )
     uvicorn.run(app, host="127.0.0.1", port=args.port)
 

@@ -29,11 +29,18 @@ def main() -> None:
         default="contiguous",
         help="which KV cache and attention path the engine uses",
     )
+    parser.add_argument(
+        "--moe",
+        choices=["auto", "direct", "reference"],
+        default="auto",
+        help="which MoE decode path the engine uses",
+    )
     parser.add_argument("--output", help="also write the report to this JSON file")
     args = parser.parse_args()
 
     reference, _, _ = load_reference_model(args.checkpoint, args.device)
     engine, _, _ = load_engine_model(args.checkpoint, args.device)
+    engine.set_moe_mode(args.moe)
 
     def make_cache():
         if args.engine_cache == "contiguous":
@@ -58,7 +65,9 @@ def main() -> None:
     # Clamp the scale to avoid unstable ratios near zero.
     rel_diff = abs_diff / reference_logits.abs().clamp(min=1.0)
 
-    reference_tokens = reference.generate(ids[0], args.new_tokens, temperature=0)[0].tolist()
+    reference_tokens = reference.generate(ids[0], args.new_tokens, temperature=0)[
+        0
+    ].tolist()
     engine_tokens = engine.generate(
         ids[0], args.new_tokens, temperature=0, cache=make_cache()
     )[0].tolist()
@@ -73,6 +82,7 @@ def main() -> None:
         "checkpoint": args.checkpoint,
         "device": args.device,
         "engine_cache": args.engine_cache,
+        "moe": args.moe,
         "dtype": str(next(engine.parameters()).dtype),
         "prompt": PROMPT,
         "prompt_tokens": ids.shape[1],

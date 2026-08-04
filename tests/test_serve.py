@@ -54,6 +54,8 @@ def test_cli_defaults_to_contiguous_and_accepts_explicit_paged_mode():
     defaults = serve.build_parser().parse_args([])
     assert defaults.cache == "contiguous"
     assert defaults.paged_attention == "auto"
+    assert defaults.moe == "auto"
+    assert defaults.device == "cpu"
 
     paged = serve.build_parser().parse_args(
         ["--cache", "paged", "--paged-attention", "gather"]

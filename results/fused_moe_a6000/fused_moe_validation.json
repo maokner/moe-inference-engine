@@ -1,0 +1,3637 @@
+{
+  "environment": {
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.35",
+    "python": "3.12.13",
+    "torch": "2.13.0+cu130",
+    "cuda": "13.0",
+    "triton": "3.7.1",
+    "gpu": "NVIDIA RTX A6000",
+    "driver": "610.43.02",
+    "git_commit": "f04346ace6962cfd8070dbe31b9da27879d8d9dd",
+    "git_tracked_status": [
+      "M benchmarks/bench.py",
+      " M src/moe_engine/model.py",
+      " M tests/test_benchmark_cli.py",
+      " M tests/test_fused_moe.py"
+    ]
+  },
+  "checkpoint": {
+    "path": "checkpoints/minimoe_sft.pt",
+    "sha256": "f8f9e91d05f00fe1d1579dc2d5ce0f2f728d0183f9424733fd93542e979d9529",
+    "step": 6358,
+    "tokens_seen": 833355776,
+    "state_dict_key_count": 252
+  },
+  "kernels": {
+    "router": {
+      "logits_error": {
+        "max_abs": 1.7881393432617188e-07,
+        "mean_abs": 6.705522537231445e-08
+      },
+      "top2_ids_equal": true,
+      "direct_top2_ids": [
+        4,
+        5
+      ],
+      "reference_top2_ids": [
+        4,
+        5
+      ],
+      "weights_error": {
+        "max_abs": 8.940696716308594e-08,
+        "mean_abs": 4.470348358154297e-08
+      },
+      "direct_weights": [
+        0.5168882012367249,
+        0.483111709356308
+      ],
+      "reference_weights": [
+        0.5168882012367249,
+        0.48311179876327515
+      ],
+      "direct_weights_sum": 0.9999998807907104
+    },
+    "all_experts_both_slots_with_distinct_weights_and_biases": [
+      {
+        "requested_first": 0,
+        "requested_second": 3,
+        "actual_ids": [
+          0,
+          3
+        ],
+        "output_error": {
+          "max_abs": 2.9802322387695312e-08,
+          "mean_abs": 2.0489305807558367e-09
+        }
+      },
+      {
+        "requested_first": 1,
+        "requested_second": 4,
+        "actual_ids": [
+          1,
+          4
+        ],
+        "output_error": {
+          "max_abs": 2.9802322387695312e-08,
+          "mean_abs": 3.5532214948119645e-09
+        }
+      },
+      {
+        "requested_first": 2,
+        "requested_second": 5,
+        "actual_ids": [
+          2,
+          5
+        ],
+        "output_error": {
+          "max_abs": 2.9802322387695312e-08,
+          "mean_abs": 5.102871902806783e-09
+        }
+      },
+      {
+        "requested_first": 3,
+        "requested_second": 6,
+        "actual_ids": [
+          3,
+          6
+        ],
+        "output_error": {
+          "max_abs": 5.960464477539063e-08,
+          "mean_abs": 6.771491367629778e-09
+        }
+      },
+      {
+        "requested_first": 4,
+        "requested_second": 7,
+        "actual_ids": [
+          4,
+          7
+        ],
+        "output_error": {
+          "max_abs": 5.960464477539063e-08,
+          "mean_abs": 9.584861793143773e-09
+        }
+      },
+      {
+        "requested_first": 5,
+        "requested_second": 0,
+        "actual_ids": [
+          5,
+          0
+        ],
+        "output_error": {
+          "max_abs": 5.960464477539063e-08,
+          "mean_abs": 1.358178791655007e-09
+        }
+      },
+      {
+        "requested_first": 6,
+        "requested_second": 1,
+        "actual_ids": [
+          6,
+          1
+        ],
+        "output_error": {
+          "max_abs": 5.960464477539063e-08,
+          "mean_abs": 1.1835558089146048e-09
+        }
+      },
+      {
+        "requested_first": 7,
+        "requested_second": 2,
+        "actual_ids": [
+          7,
+          2
+        ],
+        "output_error": {
+          "max_abs": 5.960464477539063e-08,
+          "mean_abs": 2.561137080192566e-09
+        }
+      }
+    ],
+    "all_route_ids_correct": true,
+    "worst_selected_expert_output_max_abs": 5.960464477539063e-08,
+    "worst_selected_expert_output_mean_abs": 9.584861793143773e-09,
+    "gelu": "torch.nn.GELU approximate='none' oracle over sign-varying W1 bias"
+  },
+  "storage_lifecycle": {
+    "ordinary_load_cpu": {
+      "device": "cpu",
+      "dtype": "torch.float32",
+      "state_dict_keys_unchanged": true,
+      "layer_count": 6,
+      "all_layers_valid": true,
+      "no_layer_has_persistent_full_duplicate": true,
+      "layers": [
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        }
+      ]
+    },
+    "ordinary_load_then_cuda": {
+      "device": "cuda:0",
+      "dtype": "torch.float32",
+      "state_dict_keys_unchanged": true,
+      "layer_count": 6,
+      "all_layers_valid": true,
+      "no_layer_has_persistent_full_duplicate": true,
+      "layers": [
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        }
+      ]
+    },
+    "assign_true_cpu": {
+      "device": "cpu",
+      "dtype": "torch.float32",
+      "state_dict_keys_unchanged": true,
+      "layer_count": 6,
+      "all_layers_valid": true,
+      "no_layer_has_persistent_full_duplicate": true,
+      "layers": [
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        }
+      ]
+    },
+    "assign_true_then_cuda": {
+      "device": "cuda:0",
+      "dtype": "torch.float32",
+      "state_dict_keys_unchanged": true,
+      "layer_count": 6,
+      "all_layers_valid": true,
+      "no_layer_has_persistent_full_duplicate": true,
+      "layers": [
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        },
+        {
+          "all_groups_valid": true,
+          "canonical_storage_count": 4,
+          "canonical_unique_storage_bytes": 151117824,
+          "expert_logical_parameter_bytes": 151117824,
+          "no_persistent_full_duplicate": true,
+          "groups": {
+            "w1": {
+              "shape": [
+                8,
+                3072,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b1": {
+              "shape": [
+                8,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 12288,
+              "expert_pointer_offsets_bytes": [
+                0,
+                12288,
+                24576,
+                36864,
+                49152,
+                61440,
+                73728,
+                86016
+              ],
+              "layout_valid": true,
+              "storage_bytes": 98304,
+              "logical_parameter_bytes": 98304
+            },
+            "w2": {
+              "shape": [
+                8,
+                768,
+                3072
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 9437184,
+              "expert_pointer_offsets_bytes": [
+                0,
+                9437184,
+                18874368,
+                28311552,
+                37748736,
+                47185920,
+                56623104,
+                66060288
+              ],
+              "layout_valid": true,
+              "storage_bytes": 75497472,
+              "logical_parameter_bytes": 75497472
+            },
+            "b2": {
+              "shape": [
+                8,
+                768
+              ],
+              "device": "cuda:0",
+              "dtype": "torch.float32",
+              "contiguous": true,
+              "one_shared_storage": true,
+              "canonical_base_matches_expert_zero": true,
+              "expert_pointer_stride_bytes": 3072,
+              "expert_pointer_offsets_bytes": [
+                0,
+                3072,
+                6144,
+                9216,
+                12288,
+                15360,
+                18432,
+                21504
+              ],
+              "layout_valid": true,
+              "storage_bytes": 24576,
+              "logical_parameter_bytes": 24576
+            }
+          }
+        }
+      ]
+    }
+  },
+  "real_checkpoint_cuda_storage": {
+    "device": "cuda:0",
+    "dtype": "torch.float32",
+    "state_dict_keys_unchanged": true,
+    "layer_count": 6,
+    "all_layers_valid": true,
+    "no_layer_has_persistent_full_duplicate": true,
+    "layers": [
+      {
+        "all_groups_valid": true,
+        "canonical_storage_count": 4,
+        "canonical_unique_storage_bytes": 151117824,
+        "expert_logical_parameter_bytes": 151117824,
+        "no_persistent_full_duplicate": true,
+        "groups": {
+          "w1": {
+            "shape": [
+              8,
+              3072,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b1": {
+            "shape": [
+              8,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 12288,
+            "expert_pointer_offsets_bytes": [
+              0,
+              12288,
+              24576,
+              36864,
+              49152,
+              61440,
+              73728,
+              86016
+            ],
+            "layout_valid": true,
+            "storage_bytes": 98304,
+            "logical_parameter_bytes": 98304
+          },
+          "w2": {
+            "shape": [
+              8,
+              768,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b2": {
+            "shape": [
+              8,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 3072,
+            "expert_pointer_offsets_bytes": [
+              0,
+              3072,
+              6144,
+              9216,
+              12288,
+              15360,
+              18432,
+              21504
+            ],
+            "layout_valid": true,
+            "storage_bytes": 24576,
+            "logical_parameter_bytes": 24576
+          }
+        }
+      },
+      {
+        "all_groups_valid": true,
+        "canonical_storage_count": 4,
+        "canonical_unique_storage_bytes": 151117824,
+        "expert_logical_parameter_bytes": 151117824,
+        "no_persistent_full_duplicate": true,
+        "groups": {
+          "w1": {
+            "shape": [
+              8,
+              3072,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b1": {
+            "shape": [
+              8,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 12288,
+            "expert_pointer_offsets_bytes": [
+              0,
+              12288,
+              24576,
+              36864,
+              49152,
+              61440,
+              73728,
+              86016
+            ],
+            "layout_valid": true,
+            "storage_bytes": 98304,
+            "logical_parameter_bytes": 98304
+          },
+          "w2": {
+            "shape": [
+              8,
+              768,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b2": {
+            "shape": [
+              8,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 3072,
+            "expert_pointer_offsets_bytes": [
+              0,
+              3072,
+              6144,
+              9216,
+              12288,
+              15360,
+              18432,
+              21504
+            ],
+            "layout_valid": true,
+            "storage_bytes": 24576,
+            "logical_parameter_bytes": 24576
+          }
+        }
+      },
+      {
+        "all_groups_valid": true,
+        "canonical_storage_count": 4,
+        "canonical_unique_storage_bytes": 151117824,
+        "expert_logical_parameter_bytes": 151117824,
+        "no_persistent_full_duplicate": true,
+        "groups": {
+          "w1": {
+            "shape": [
+              8,
+              3072,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b1": {
+            "shape": [
+              8,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 12288,
+            "expert_pointer_offsets_bytes": [
+              0,
+              12288,
+              24576,
+              36864,
+              49152,
+              61440,
+              73728,
+              86016
+            ],
+            "layout_valid": true,
+            "storage_bytes": 98304,
+            "logical_parameter_bytes": 98304
+          },
+          "w2": {
+            "shape": [
+              8,
+              768,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b2": {
+            "shape": [
+              8,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 3072,
+            "expert_pointer_offsets_bytes": [
+              0,
+              3072,
+              6144,
+              9216,
+              12288,
+              15360,
+              18432,
+              21504
+            ],
+            "layout_valid": true,
+            "storage_bytes": 24576,
+            "logical_parameter_bytes": 24576
+          }
+        }
+      },
+      {
+        "all_groups_valid": true,
+        "canonical_storage_count": 4,
+        "canonical_unique_storage_bytes": 151117824,
+        "expert_logical_parameter_bytes": 151117824,
+        "no_persistent_full_duplicate": true,
+        "groups": {
+          "w1": {
+            "shape": [
+              8,
+              3072,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b1": {
+            "shape": [
+              8,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 12288,
+            "expert_pointer_offsets_bytes": [
+              0,
+              12288,
+              24576,
+              36864,
+              49152,
+              61440,
+              73728,
+              86016
+            ],
+            "layout_valid": true,
+            "storage_bytes": 98304,
+            "logical_parameter_bytes": 98304
+          },
+          "w2": {
+            "shape": [
+              8,
+              768,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b2": {
+            "shape": [
+              8,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 3072,
+            "expert_pointer_offsets_bytes": [
+              0,
+              3072,
+              6144,
+              9216,
+              12288,
+              15360,
+              18432,
+              21504
+            ],
+            "layout_valid": true,
+            "storage_bytes": 24576,
+            "logical_parameter_bytes": 24576
+          }
+        }
+      },
+      {
+        "all_groups_valid": true,
+        "canonical_storage_count": 4,
+        "canonical_unique_storage_bytes": 151117824,
+        "expert_logical_parameter_bytes": 151117824,
+        "no_persistent_full_duplicate": true,
+        "groups": {
+          "w1": {
+            "shape": [
+              8,
+              3072,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b1": {
+            "shape": [
+              8,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 12288,
+            "expert_pointer_offsets_bytes": [
+              0,
+              12288,
+              24576,
+              36864,
+              49152,
+              61440,
+              73728,
+              86016
+            ],
+            "layout_valid": true,
+            "storage_bytes": 98304,
+            "logical_parameter_bytes": 98304
+          },
+          "w2": {
+            "shape": [
+              8,
+              768,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b2": {
+            "shape": [
+              8,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 3072,
+            "expert_pointer_offsets_bytes": [
+              0,
+              3072,
+              6144,
+              9216,
+              12288,
+              15360,
+              18432,
+              21504
+            ],
+            "layout_valid": true,
+            "storage_bytes": 24576,
+            "logical_parameter_bytes": 24576
+          }
+        }
+      },
+      {
+        "all_groups_valid": true,
+        "canonical_storage_count": 4,
+        "canonical_unique_storage_bytes": 151117824,
+        "expert_logical_parameter_bytes": 151117824,
+        "no_persistent_full_duplicate": true,
+        "groups": {
+          "w1": {
+            "shape": [
+              8,
+              3072,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b1": {
+            "shape": [
+              8,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 12288,
+            "expert_pointer_offsets_bytes": [
+              0,
+              12288,
+              24576,
+              36864,
+              49152,
+              61440,
+              73728,
+              86016
+            ],
+            "layout_valid": true,
+            "storage_bytes": 98304,
+            "logical_parameter_bytes": 98304
+          },
+          "w2": {
+            "shape": [
+              8,
+              768,
+              3072
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 9437184,
+            "expert_pointer_offsets_bytes": [
+              0,
+              9437184,
+              18874368,
+              28311552,
+              37748736,
+              47185920,
+              56623104,
+              66060288
+            ],
+            "layout_valid": true,
+            "storage_bytes": 75497472,
+            "logical_parameter_bytes": 75497472
+          },
+          "b2": {
+            "shape": [
+              8,
+              768
+            ],
+            "device": "cuda:0",
+            "dtype": "torch.float32",
+            "contiguous": true,
+            "one_shared_storage": true,
+            "canonical_base_matches_expert_zero": true,
+            "expert_pointer_stride_bytes": 3072,
+            "expert_pointer_offsets_bytes": [
+              0,
+              3072,
+              6144,
+              9216,
+              12288,
+              15360,
+              18432,
+              21504
+            ],
+            "layout_valid": true,
+            "storage_bytes": 24576,
+            "logical_parameter_bytes": 24576
+          }
+        }
+      }
+    ]
+  },
+  "full_model": {
+    "prompt_tokens": 62,
+    "one_token_logit_error": {
+      "max_abs": 1.621246337890625e-05,
+      "mean_abs": 2.8136362288933014e-06
+    },
+    "one_token_greedy_id_equal": true,
+    "greedy_tokens_compared": 64,
+    "all_greedy_tokens_equal": true,
+    "generated_token_ids": [
+      262,
+      2746,
+      318,
+      407,
+      691,
+      6942,
+      475,
+      635,
+      468,
+      257,
+      1029,
+      4922,
+      286,
+      9922,
+      13,
+      198,
+      198,
+      464,
+      2746,
+      338,
+      2854,
+      318,
+      635,
+      16726,
+      416,
+      14176,
+      340,
+      284,
+      257,
+      2746,
+      326,
+      468,
+      587,
+      8776,
+      319,
+      257,
+      1588,
+      27039,
+      286,
+      1103,
+      12,
+      6894,
+      1366,
+      13,
+      383,
+      2746,
+      338,
+      2854,
+      318,
+      16726,
+      416,
+      14176,
+      340,
+      284,
+      257,
+      2746,
+      326,
+      468,
+      587,
+      8776,
+      319,
+      257,
+      1588,
+      27039
+    ]
+  },
+  "acceptance": {
+    "all_passed": true,
+    "checks": {
+      "router_logits": true,
+      "router_top2_ids": true,
+      "router_weights": true,
+      "all_experts_both_slots": true,
+      "expert_output_and_exact_gelu": true,
+      "one_token_logits": true,
+      "one_token_greedy_id": true,
+      "greedy_64_tokens": true,
+      "storage_lifecycle": true,
+      "real_checkpoint_cuda_storage": true
+    },
+    "tolerances": {
+      "router_logits_max_abs": 2e-05,
+      "router_weights_max_abs": 2e-06,
+      "selected_expert_output_max_abs": 0.0003,
+      "full_model_one_token_logits_max_abs": 0.001,
+      "ids_and_greedy_tokens": "exact"
+    }
+  }
+}

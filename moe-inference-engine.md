@@ -20,6 +20,11 @@ The synchronous server therefore uses contiguous caching by default.
 Paged serving remains available through `--cache paged`, with `--paged-attention auto|gather|direct` selecting the fallback or Triton implementation.
 The one-token contiguous-decode profile attributes 69.8% of instrumented time to routing/top-2 selection and 79.7% to the combined MoE path.
 Pure Python loop overhead is only 3.8% of clean median latency; 48 `aten::nonzero` calls from per-expert `torch.where` route discovery are the dominant operation at 38.196ms per token.
+The fixed-shape fused MoE path replaces that decode work with three Triton kernels per layer while keeping the top-2 ids and weights on device.
+On the 21-round interleaved A6000 run it completed 1,344 decode steps in 10.270138 seconds, or 130.865 tok/s, versus 70.064978 seconds and 19.182 tok/s for the PyTorch oracle.
+That is 582.23% higher aggregate throughput, and the paired direct-minus-reference mean latency delta is -44.490ms with a 95% interval of -46.612ms to -42.368ms.
+One-token real-checkpoint logits differ by at most `1.62e-5` with `2.81e-6` mean absolute error, and all 64 greedy tokens match exactly.
+The direct profile removes all 48 per-step `aten::nonzero` calls and moves the dominant component to QKV and attention work.
 Quantization provides the surrounding inference path.
 
 ## Scope, in build order
@@ -27,7 +32,7 @@ Quantization provides the surrounding inference path.
 1. **Baseline server.** Plain PyTorch generation over HTTP. Done.
 2. **Paged KV cache.** Fixed-size blocks and a block table per sequence, retained as an explicit learning and benchmark path. Done.
 3. **Direct paged attention.** Read non-contiguous K/V blocks directly instead of gathering them into contiguous tensors on every decode step, with the acceptance target of matching or beating the contiguous KV cache on the same single-request benchmark. Implemented: beat gather by 2.7% but trailed contiguous by 2.4% on the final interleaved A6000 run.
-4. **Fused MoE kernel.** Fuse top-2 dispatch and grouped expert GEMMs in Triton or CUDA.
+4. **Fused MoE kernel.** Done for batch-one float32 CUDA decode: validated against the PyTorch oracle and real checkpoint, with 130.865 tok/s versus 19.182 tok/s on the final interleaved A6000 run.
 5. **Quantization.** Int8 and int4 groupwise expert weights, with HellaSwag and perplexity measurements.
 6. **CUDA graphs.** Capture the decode step to kill launch overhead at small batch sizes.
 7. **Speculative decoding.** Use a small dense draft model.
@@ -77,8 +82,6 @@ Swap when the direct paged-attention or fused-MoE milestone has dedicated-GPU nu
 
 ## Next steps
 
-- Build a batch-one fused MoE path that removes dynamic route discovery and CPU synchronization, not only the 2.494ms of pure Python loop overhead.
-- Use three fixed-shape Triton kernels per layer: fp32 router/top-2 to two device-resident ids and weights, selected-expert W1 plus GELU to `[2, 3072]`, then selected-expert W2 plus weighted reduction to `[768]`.
-- Keep the expert-loop implementation as the correctness oracle for any future fused path.
+- Preserve the fused-MoE correctness and interleaved benchmark gates as later optimizations change the decode path.
 - CUDA graphs are the most relevant later optimization for the remaining direct-attention launch-overhead gap against contiguous SDPA.
 - Benchmark discipline from milestone 3 carries forward: interleave systems within one session on virtualized GPUs; sequential passes drift too much to resolve small differences.

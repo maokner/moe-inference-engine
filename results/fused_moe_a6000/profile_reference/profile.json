@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "checkpoint": "/home/ubuntu/moe-inference-engine/checkpoints/minimoe_sft.pt",
+  "checkpoint_step": 6358,
+  "hardware": {
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.35",
+    "machine": "x86_64",
+    "python": "3.12.13",
+    "torch": "2.13.0+cu130",
+    "tiktoken": "0.13.0",
+    "device": "cuda",
+    "gpu": "NVIDIA RTX A6000",
+    "cuda": "13.0",
+    "gpu_memory_bytes": 50896568320,
+    "compute_capability": "8.6",
+    "triton": "3.7.1",
+    "driver": "610.43.02"
+  },
+  "prompt": "The mixture-of-experts architecture replaces the dense feed-forward layer of a transformer with a set of expert networks and a router. For each token, the router selects a small number of experts, so the model gains parameters without a matching increase in compute. The hard part is serving it efficiently, because",
+  "prompt_tokens": 62,
+  "warmup_steps": 16,
+  "steps": 32,
+  "cache": "contiguous",
+  "moe": "reference",
+  "decode": "one token per forward, greedy argmax",
+  "outputs_match": true,
+  "generated_token_ids": [
+    2746,
+    318,
+    407,
+    691,
+    6942,
+    475,
+    635,
+    468,
+    257,
+    1029,
+    4922,
+    286,
+    9922,
+    13,
+    198,
+    198,
+    464,
+    2746,
+    338,
+    2854,
+    318,
+    635,
+    16726,
+    416,
+    14176,
+    340,
+    284,
+    257,
+    2746,
+    326,
+    468,
+    587
+  ],
+  "uninstrumented": {
+    "measurement": "CUDA events",
+    "step_times_ms": [
+      52.12675094604492,
+      52.54662322998047,
+      53.200767517089844,
+      52.72304153442383,
+      52.223934173583984,
+      52.910560607910156,
+      54.45363235473633,
+      53.461631774902344,
+      51.76847839355469,
+      45.151329040527344,
+      48.899871826171875,
+      51.04924774169922,
+      55.075199127197266,
+      53.97071838378906,
+      55.88780975341797,
+      54.954463958740234,
+      57.30294418334961,
+      61.95439910888672,
+      57.764095306396484,
+      59.98624038696289,
+      60.11772918701172,
+      62.969886779785156,
+      57.0280647277832,
+      59.774593353271484,
+      60.26310348510742,
+      56.3230094909668,
+      56.790496826171875,
+      55.217918395996094,
+      55.780094146728516,
+      55.610816955566406,
+      56.3021125793457,
+      51.95897674560547
+    ],
+    "median_ms": 55.14655876159668,
+    "mean_ms": 55.173391938209534,
+    "p90_ms": 60.11772918701172,
+    "tokens_per_second": 18.124678669745958
+  },
+  "profiled": {
+    "timing_basis": "CPU-scope wall time under CPU-activity torch.profiler",
+    "instrumented_total_ms_per_step": 58.001372031250035,
+    "instrumented_total_cpu_ms_per_step": 58.001372031250035,
+    "components": [
+      {
+        "component": "qkv_attention_work",
+        "instrumented_ms_per_step": 4.783573875000018,
+        "percent_of_instrumented_step": 8.247346066956347,
+        "calls": 192,
+        "calls_per_step": 6.0
+      },
+      {
+        "component": "moe_routing_top2",
+        "instrumented_ms_per_step": 39.96886171875,
+        "percent_of_instrumented_step": 68.91020042976835,
+        "calls": 1728,
+        "calls_per_step": 54.0
+      },
+      {
+        "component": "expert_mlp_execution",
+        "instrumented_ms_per_step": 4.078737468750002,
+        "percent_of_instrumented_step": 7.032139630339184,
+        "calls": 384,
+        "calls_per_step": 12.0
+      },
+      {
+        "component": "route_weight_combination",
+        "instrumented_ms_per_step": 1.8213085937499942,
+        "percent_of_instrumented_step": 3.1401129489983575,
+        "calls": 384,
+        "calls_per_step": 12.0
+      },
+      {
+        "component": "fused_moe_decode",
+        "instrumented_ms_per_step": 0.0,
+        "percent_of_instrumented_step": 0.0,
+        "calls": 0,
+        "calls_per_step": 0
+      },
+      {
+        "component": "layernorm_residual_output",
+        "instrumented_ms_per_step": 3.420291343749952,
+        "percent_of_instrumented_step": 5.896914545240695,
+        "calls": 640,
+        "calls_per_step": 20.0
+      }
+    ],
+    "cuda_activity_collected": false,
+    "cuda_launch_calls": null,
+    "cuda_launch_calls_per_step": null,
+    "cuda_launch_cpu_ms_per_step": null,
+    "cpu_operator_self_ms_per_step": 45.16394415624968,
+    "cpu_operator_calls_per_step": 1659.0,
+    "expert_loop": {
+      "cpu_scope_ms_per_step": 45.910296156249984,
+      "unattributed_python_cpu_ms_per_step": 1.8792288124999708,
+      "calls_per_step": 6.0
+    },
+    "top_cpu_operators": [
+      {
+        "operator": "aten::nonzero",
+        "cpu_self_ms_per_step": 27.2954531250001,
+        "calls_per_step": 48.0
+      },
+      {
+        "operator": "aten::addmm",
+        "cpu_self_ms_per_step": 3.0114945312499373,
+        "calls_per_step": 37.0
+      },
+      {
+        "operator": "aten::eq",
+        "cpu_self_ms_per_step": 2.93208528124997,
+        "calls_per_step": 48.0
+      },
+      {
+        "operator": "aten::index",
+        "cpu_self_ms_per_step": 1.3646062812500335,
+        "calls_per_step": 24.0
+      },
+      {
+        "operator": "aten::add",
+        "cpu_self_ms_per_step": 0.70987721874998,
+        "calls_per_step": 13.0
+      },
+      {
+        "operator": "aten::mul",
+        "cpu_self_ms_per_step": 0.6684750624999541,
+        "calls_per_step": 12.0
+      },
+      {
+        "operator": "aten::native_layer_norm",
+        "cpu_self_ms_per_step": 0.6232395312499202,
+        "calls_per_step": 13.0
+      },
+      {
+        "operator": "aten::topk",
+        "cpu_self_ms_per_step": 0.6124991562500118,
+        "calls_per_step": 6.0
+      },
+      {
+        "operator": "aten::empty",
+        "cpu_self_ms_per_step": 0.5701448437499866,
+        "calls_per_step": 66.0
+      },
+      {
+        "operator": "aten::gelu",
+        "cpu_self_ms_per_step": 0.5328461874999568,
+        "calls_per_step": 12.0
+      },
+      {
+        "operator": "aten::mm",
+        "cpu_self_ms_per_step": 0.5123536875000032,
+        "calls_per_step": 6.0
+      },
+      {
+        "operator": "aten::copy_",
+        "cpu_self_ms_per_step": 0.4877313437500251,
+        "calls_per_step": 12.0
+      },
+      {
+        "operator": "aten::as_strided",
+        "cpu_self_ms_per_step": 0.4800898437501639,
+        "calls_per_step": 338.0
+      },
+      {
+        "operator": "aten::index_add_",
+        "cpu_self_ms_per_step": 0.4645825937500088,
+        "calls_per_step": 12.0
+      },
+      {
+        "operator": "aten::transpose",
+        "cpu_self_ms_per_step": 0.41733703124994503,
+        "calls_per_step": 139.0
+      },
+      {
+        "operator": "aten::select",
+        "cpu_self_ms_per_step": 0.38667440624982796,
+        "calls_per_step": 121.0
+      },
+      {
+        "operator": "aten::unbind",
+        "cpu_self_ms_per_step": 0.3601131250002094,
+        "calls_per_step": 48.0
+      },
+      {
+        "operator": "aten::view",
+        "cpu_self_ms_per_step": 0.3548280937502228,
+        "calls_per_step": 126.0
+      },
+      {
+        "operator": "aten::_efficient_attention_forward",
+        "cpu_self_ms_per_step": 0.33534790624997,
+        "calls_per_step": 6.0
+      },
+      {
+        "operator": "aten::linear",
+        "cpu_self_ms_per_step": 0.3078533125000045,
+        "calls_per_step": 43.0
+      }
+    ]
+  },
+  "artifacts": {
+    "trace": "trace.json.gz",
+    "trace_event_count": 58219
+  },
+  "limitations": [
+    "torch.profiler and record_function add CPU overhead, so component timings are reported separately from clean latency.",
+    "The component profile collects CPU activity only because CUPTI can drop CUDA-activity buffers on virtualized GPUs; clean whole-step GPU latency still uses CUDA events.",
+    "CPU scope time includes dispatch and synchronous GPU waits; asynchronous GPU work may be charged to a later synchronization scope, so values are critical-path attribution rather than isolated kernel durations.",
+    "The repeated steps grow context from 62 tokens; results describe warmed early decode, not every context length."
+  ]
+}

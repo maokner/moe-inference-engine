@@ -62,7 +62,7 @@ def timed_greedy_decode(model, prompt_ids, device: str, new_tokens: int) -> list
         for _ in range(new_tokens):
             sync(device)
             start = time.perf_counter()
-            logits, _ = model(x[:, -model.max_seq_length:])
+            logits, _ = model(x[:, -model.max_seq_length :])
             next_token = logits[:, -1, :].argmax(dim=-1, keepdim=True)
             sync(device)
             step_times.append(time.perf_counter() - start)
@@ -72,7 +72,9 @@ def timed_greedy_decode(model, prompt_ids, device: str, new_tokens: int) -> list
     return step_times
 
 
-def timed_greedy_decode_engine(model, prompt_ids, device: str, new_tokens: int, cache=None) -> list[float]:
+def timed_greedy_decode_engine(
+    model, prompt_ids, device: str, new_tokens: int, cache=None
+) -> list[float]:
     """Time cache-backed greedy decode one token at a time."""
     if cache is None:
         cache = model.new_cache()
@@ -96,7 +98,7 @@ def tok_per_sec(step_times: list[float]) -> float:
     return round(len(step_times) / sum(step_times), 1)
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--system", choices=["reference", "engine", "engine-paged"], default="reference"
@@ -107,22 +109,44 @@ def main() -> None:
         default="auto",
         help="engine-paged only: direct Triton kernel, legacy gather path, or auto",
     )
+    parser.add_argument(
+        "--moe",
+        choices=["auto", "direct", "reference"],
+        default="auto",
+        help="engine only: fixed-shape Triton decode, PyTorch oracle, or auto",
+    )
     parser.add_argument("--checkpoint", default="checkpoints/minimoe_sft.pt")
+    parser.add_argument(
+        "--device", choices=["auto", "cpu", "mps", "cuda"], default="cpu"
+    )
     parser.add_argument("--new-tokens", type=int, default=128)
     parser.add_argument("--repeats", type=int, default=3)
-    parser.add_argument("--output", help="also write results (with per-token times) to this JSON file")
+    parser.add_argument(
+        "--output", help="also write results (with per-token times) to this JSON file"
+    )
+    return parser
+
+
+def main() -> None:
+    parser = build_parser()
     args = parser.parse_args()
     if args.new_tokens < 2:
-        parser.error("--new-tokens must be at least 2 (the first step is excluded as prefill)")
+        parser.error(
+            "--new-tokens must be at least 2 (the first step is excluded as prefill)"
+        )
     if args.repeats < 1:
         parser.error("--repeats must be at least 1")
 
-    device = pick_device()
+    device = pick_device() if args.device == "auto" else args.device
+    if device == "cuda" and not torch.cuda.is_available():
+        parser.error("CUDA was requested but is not available")
+    if device == "mps" and not torch.backends.mps.is_available():
+        parser.error("MPS was requested but is not available")
     enc = tiktoken.get_encoding("gpt2")
 
     kv_config = {}
     if args.system == "reference":
-        model, config, metadata = load_reference_model(args.checkpoint, device)
+        model, _config, metadata = load_reference_model(args.checkpoint, device)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
         cleanup = None
 
@@ -137,7 +161,8 @@ def main() -> None:
 
         label = "reference (no KV cache)"
     elif args.system == "engine":
-        model, config, metadata = load_engine_model(args.checkpoint, device)
+        model, _config, metadata = load_engine_model(args.checkpoint, device)
+        model.set_moe_mode(args.moe)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
         make_cache, cleanup = model.new_cache, None
 
@@ -147,15 +172,19 @@ def main() -> None:
         def decode(n):
             return timed_greedy_decode_engine(model, prompt_ids, device, n)
 
-        label = "engine (KV cache)"
+        label = f"engine (KV cache, MoE {args.moe})"
+        kv_config["moe"] = args.moe
     else:
-        model, config, metadata = load_engine_model(args.checkpoint, device)
+        model, _config, metadata = load_engine_model(args.checkpoint, device)
+        model.set_moe_mode(args.moe)
         prompt_ids = torch.tensor(enc.encode(PROMPT), device=device)
         # Match the server's one-sequence pool.
         block_size = 16
         num_blocks = -(-model.max_seq_length // block_size)
         allocator = model.new_block_allocator(
-            num_blocks=num_blocks, block_size=block_size, attention_mode=args.paged_attention
+            num_blocks=num_blocks,
+            block_size=block_size,
+            attention_mode=args.paged_attention,
         )
         pool_bytes = 2 * allocator.k_pool.numel() * allocator.k_pool.element_size()
         kv_config = {
@@ -163,6 +192,7 @@ def main() -> None:
             "kv_num_blocks": num_blocks,
             "kv_pool_mb": round(pool_bytes / 2**20, 1),
             "paged_attention": args.paged_attention,
+            "moe": args.moe,
         }
 
         def decode(n):
@@ -182,7 +212,7 @@ def main() -> None:
         def prefill(cache):
             return model(prompt_ids.unsqueeze(0), cache)
 
-        label = f"engine (paged KV cache, {args.paged_attention})"
+        label = f"engine (paged KV cache, {args.paged_attention}, MoE {args.moe})"
 
     # Warm up kernels and device allocations.
     decode(8)
@@ -196,7 +226,9 @@ def main() -> None:
     typical = [sorted(times)[len(times) // 2] for times in zip(*decode_runs)]
     pooled = sorted(t for steps in decode_runs for t in steps)
     if not pooled:
-        raise SystemExit("no decode steps to aggregate: every run hit EOS on its first token")
+        raise SystemExit(
+            "no decode steps to aggregate: every run hit EOS on its first token"
+        )
     half = len(typical) // 2
 
     results = {
