@@ -109,6 +109,9 @@ uv run python benchmarks/vllm_compare.py \
 The harness fixes one active request, batch size one, FP32, the same local tokenizer, the canonical 62-token prompt, 64 greedy tokens with EOS ignored, and a 1,024-token context limit.
 It runs the untimed native-vLLM numerical validator before benchmarking and refuses to publish a performance summary if any round has a token mismatch.
 Each of the default 21 rounds rotates the first system, and each system-round runs in a fresh process with a complete warmup before its one measured request.
+vLLM may merge adjacent `DELTA` outputs when its producer gets ahead of the consumer.
+The harness accepts every non-empty chunk, assigns one observed wall-clock delivery timestamp to all tokens in that chunk, and records chunk sizes plus the number of coalesced events in the raw metrics.
+Co-delivered tokens therefore have zero user-visible interval without disabling vLLM's default asynchronous scheduling.
 The report retains raw per-round results and provides paired per-round deltas with two-sided Student-t 95% confidence intervals for time to first token, mean inter-token latency, total generation time, and throughput.
 
 The minimum FP32 KV capacity is `1024 positions * 6 layers * 8 heads * 96 head dimensions * 2 for K and V * 4 bytes = 37,748,736 bytes`.

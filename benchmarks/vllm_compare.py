@@ -59,6 +59,8 @@ class RunMetrics:
     aggregate_tokens_per_second: float
     peak_gpu_memory_mb: float
     generated_token_ids: list[int]
+    stream_chunk_sizes: list[int]
+    coalesced_stream_event_count: int
 
 
 class GpuMemoryMonitor:
@@ -176,11 +178,16 @@ def _metrics(
     token_times: list[float],
     token_ids: list[int],
     peak_bytes: int,
+    stream_chunk_sizes: list[int] | None = None,
 ) -> RunMetrics:
     if len(token_ids) != GENERATED_TOKENS or len(token_times) != GENERATED_TOKENS:
         raise RuntimeError(
             f"generation returned {len(token_ids)} tokens, expected {GENERATED_TOKENS}"
         )
+    if stream_chunk_sizes is None:
+        stream_chunk_sizes = [1] * len(token_ids)
+    if not stream_chunk_sizes or sum(stream_chunk_sizes) != len(token_ids):
+        raise RuntimeError("stream chunk sizes do not cover every generated token")
     intervals = [
         (current - previous) * 1000
         for previous, current in zip(token_times, token_times[1:])
@@ -194,6 +201,8 @@ def _metrics(
         aggregate_tokens_per_second=GENERATED_TOKENS / total_s,
         peak_gpu_memory_mb=peak_bytes / 2**20,
         generated_token_ids=token_ids,
+        stream_chunk_sizes=stream_chunk_sizes,
+        coalesced_stream_event_count=sum(size > 1 for size in stream_chunk_sizes),
     )
 
 
@@ -241,7 +250,7 @@ def benchmark_engine(
 
 async def _vllm_generate(
     engine, prompt_ids: list[int]
-) -> tuple[float, list[float], list[int]]:
+) -> tuple[float, list[float], list[int], list[int]]:
     from vllm import SamplingParams
     from vllm.sampling_params import RequestOutputKind
 
@@ -254,20 +263,22 @@ async def _vllm_generate(
     )
     token_times: list[float] = []
     token_ids: list[int] = []
+    stream_chunk_sizes: list[int] = []
     start = time.perf_counter()
     async for output in engine.generate(
         {"prompt_token_ids": prompt_ids}, sampling, request_id=uuid.uuid4().hex
     ):
         now = time.perf_counter()
         delta_ids = list(output.outputs[0].token_ids)
-        if len(delta_ids) != 1:
-            raise RuntimeError(
-                "vLLM did not stream exactly one token per decode iteration; "
-                "per-token latency would be ambiguous"
-            )
+        if not delta_ids:
+            continue
         token_ids.extend(delta_ids)
-        token_times.append(now)
-    return start, token_times, token_ids
+        # DELTA outputs may be merged when the producer gets ahead. Tokens in
+        # one chunk become visible together, so they share a delivery timestamp
+        # and therefore have zero user-observed interval within that chunk.
+        token_times.extend([now] * len(delta_ids))
+        stream_chunk_sizes.append(len(delta_ids))
+    return start, token_times, token_ids, stream_chunk_sizes
 
 
 async def benchmark_vllm(
@@ -292,8 +303,16 @@ async def benchmark_vllm(
         # Full warmup covers prefill, decode, lazy compilation, and CUDA graphs.
         await _vllm_generate(engine, prompt_ids)
         monitor.start()
-        start, token_times, token_ids = await _vllm_generate(engine, prompt_ids)
-        metrics = _metrics(start, token_times, token_ids, monitor.stop())
+        start, token_times, token_ids, stream_chunk_sizes = await _vllm_generate(
+            engine, prompt_ids
+        )
+        metrics = _metrics(
+            start,
+            token_times,
+            token_ids,
+            monitor.stop(),
+            stream_chunk_sizes,
+        )
         return metrics, {
             "enforce_eager": enforce_eager,
             "model_impl": "vllm",

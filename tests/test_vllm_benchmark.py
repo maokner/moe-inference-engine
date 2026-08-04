@@ -169,7 +169,27 @@ def test_engine_round_warms_before_memory_monitor_and_measurement(monkeypatch):
     )
     assert events == ["generate", "monitor-start", "generate", "monitor-stop"]
     assert metrics.generated_token_ids == [3] * 64
+    assert metrics.stream_chunk_sizes == [1] * 64
+    assert metrics.coalesced_stream_event_count == 0
     assert extra["reserved_kv_cache_bytes"] == MINIMUM_KV_CACHE_MEMORY_BYTES
+
+
+def test_coalesced_vllm_delta_uses_one_user_visible_timestamp_per_chunk():
+    token_ids = list(range(64))
+    token_times = [1.1] + [1.2, 1.2] + [1.3] * 61
+    metrics = vllm_compare._metrics(
+        1.0,
+        token_times,
+        token_ids,
+        100 * 2**20,
+        stream_chunk_sizes=[1, 2, 61],
+    )
+    assert metrics.generated_token_ids == token_ids
+    assert metrics.stream_chunk_sizes == [1, 2, 61]
+    assert metrics.coalesced_stream_event_count == 2
+    assert metrics.inter_token_latency_ms[1] == 0.0
+    assert metrics.inter_token_latency_ms[-1] == 0.0
+    assert metrics.mean_inter_token_latency_ms == pytest.approx(200.0 / 63)
 
 
 def test_all_mode_records_rotating_raw_rounds(monkeypatch, tmp_path: Path):
