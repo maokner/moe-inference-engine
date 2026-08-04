@@ -1,0 +1,329 @@
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+INFO 08-04 04:13:16 [model.py:530] Resolved architecture: MiniMoEForCausalLM
+INFO 08-04 04:13:16 [model.py:1545] Using max model len 1024
+INFO 08-04 04:13:16 [scheduler.py:229] Chunked prefill is enabled with max_num_batched_tokens=1024.
+INFO 08-04 04:13:16 [vllm.py:630] Asynchronous scheduling is enabled.
+INFO 08-04 04:13:16 [vllm.py:637] Disabling NCCL for DP synchronization when using async scheduling.
+WARNING 08-04 04:13:16 [registry.py:216] Using a slow tokenizer. This might cause a significant slowdown. Consider using a fast tokenizer instead.
+WARNING 08-04 04:13:16 [system_utils.py:136] We must use the `spawn` multiprocessing start method. Overriding VLLM_WORKER_MULTIPROC_METHOD to 'spawn'. See https://docs.vllm.ai/en/latest/usage/troubleshooting.html#python-multiprocessing for more information. Reasons: CUDA is initialized
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:25 [core.py:97] Initializing a V1 LLM engine (v0.14.1) with config: model='checkpoints/minimoe-hf', speculative_config=None, tokenizer='checkpoints/minimoe-hf', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.float32, max_seq_len=1024, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=checkpoints/minimoe-hf, enable_prefix_caching=False, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'splitting_ops': ['vllm::unified_attention', 'vllm::unified_attention_with_output', 'vllm::unified_mla_attention', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::gdn_attention_core', 'vllm::kda_attention', 'vllm::sparse_attn_indexer'], 'compile_mm_encoder': False, 'compile_sizes': [], 'compile_ranges_split_points': [1024], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'eliminate_noops': True, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False}, 'max_cudagraph_capture_size': 2, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': True}, 'local_cache_dir': None}
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:28 [parallel_state.py:1214] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://10.240.125.203:58311 backend=nccl
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:28 [parallel_state.py:1425] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank 0
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:29 [gpu_model_runner.py:3808] Starting to load model checkpoints/minimoe-hf...
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:29 [cuda.py:351] Using TRITON_ATTN attention backend out of potential backends: ('TRITON_ATTN', 'FLEX_ATTENTION')
+[0;36m(EngineCore_DP0 pid=10237)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+[0;36m(EngineCore_DP0 pid=10237)[0;0m Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:01<00:00,  1.57s/it]
+[0;36m(EngineCore_DP0 pid=10237)[0;0m Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:01<00:00,  1.57s/it]
+[0;36m(EngineCore_DP0 pid=10237)[0;0m 
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:31 [default_loader.py:291] Loading weights took 1.63 seconds
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:32 [gpu_model_runner.py:3905] Model loading took 1.05 GiB memory and 2.032176 seconds
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:35 [backends.py:644] Using cache directory: /home/ubuntu/.cache/vllm/torch_compile_cache/9c29e71492/rank_0_0/backbone for vLLM's torch.compile
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:35 [backends.py:704] Dynamo bytecode transform time: 2.83 s
+[0;36m(EngineCore_DP0 pid=10237)[0;0m WARNING 08-04 04:13:37 [fused_moe.py:1090] Using default MoE config. Performance might be sub-optimal! Config file not found at /home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/layers/fused_moe/configs/E=8,N=3072,device_name=NVIDIA_RTX_A6000,dtype=float32.json
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:37 [backends.py:226] Directly load the compiled graph(s) for compile range (1, 1024) from the cache, took 1.707 s
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:37 [monitor.py:34] torch.compile takes 4.54 s in total
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:38 [gpu_worker.py:312] Initial free memory 43.17 GiB, reserved 0.07 GiB memory for KV Cache as specified by kv_cache_memory_bytes config and skipped memory profiling. This does not respect the gpu_memory_utilization config. Only use kv_cache_memory_bytes config when you want manual control of KV cache memory size. If OOM'ed, check the difference of initial free memory between the current run and the previous run where kv_cache_memory_bytes is suggested and update it correspondingly.
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:38 [kv_cache_utils.py:1305] GPU KV cache size: 2,048 tokens
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:38 [kv_cache_utils.py:1310] Maximum concurrency for 1,024 tokens per request: 2.00x
+[0;36m(EngineCore_DP0 pid=10237)[0;0m Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/2 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 2/2 [00:00<00:00,  8.58it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 2/2 [00:00<00:00,  8.56it/s]
+[0;36m(EngineCore_DP0 pid=10237)[0;0m Capturing CUDA graphs (decode, FULL):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 1/1 [00:00<00:00,  9.10it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 1/1 [00:00<00:00,  9.08it/s]
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:39 [gpu_model_runner.py:4856] Graph capturing finished in 1 secs, took 0.02 GiB
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:39 [core.py:273] init engine (profile, create kv cache, warmup model) took 7.59 seconds
+[0;36m(EngineCore_DP0 pid=10237)[0;0m WARNING 08-04 04:13:40 [registry.py:216] Using a slow tokenizer. This might cause a significant slowdown. Consider using a fast tokenizer instead.
+[0;36m(EngineCore_DP0 pid=10237)[0;0m INFO 08-04 04:13:40 [vllm.py:630] Asynchronous scheduling is enabled.
+[rank0]:[W804 04:13:42.207934747 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+INFO 08-04 04:13:43 [model.py:530] Resolved architecture: MiniMoEForCausalLM
+INFO 08-04 04:13:43 [model.py:1545] Using max model len 1024
+INFO 08-04 04:13:43 [scheduler.py:229] Chunked prefill is enabled with max_num_batched_tokens=1024.
+WARNING 08-04 04:13:43 [vllm.py:665] Enforce eager set, overriding optimization level to -O0
+INFO 08-04 04:13:43 [vllm.py:765] Cudagraph is disabled under eager mode
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:13:52 [core.py:97] Initializing a V1 LLM engine (v0.14.1) with config: model='checkpoints/minimoe-hf', speculative_config=None, tokenizer='checkpoints/minimoe-hf', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.float32, max_seq_len=1024, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=True, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=checkpoints/minimoe-hf, enable_prefix_caching=False, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.NONE: 0>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['all'], 'splitting_ops': [], 'compile_mm_encoder': False, 'compile_sizes': [], 'compile_ranges_split_points': [1024], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.NONE: 0>, 'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes': [], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'eliminate_noops': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False}, 'max_cudagraph_capture_size': 0, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': True}, 'local_cache_dir': None}
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:13:55 [parallel_state.py:1214] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://10.240.125.203:45649 backend=nccl
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:13:56 [parallel_state.py:1425] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank 0
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:13:57 [gpu_model_runner.py:3808] Starting to load model checkpoints/minimoe-hf...
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:13:57 [cuda.py:351] Using TRITON_ATTN attention backend out of potential backends: ('TRITON_ATTN', 'FLEX_ATTENTION')
+[0;36m(EngineCore_DP0 pid=10539)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+[0;36m(EngineCore_DP0 pid=10539)[0;0m Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:01<00:00,  1.12s/it]
+[0;36m(EngineCore_DP0 pid=10539)[0;0m Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:01<00:00,  1.12s/it]
+[0;36m(EngineCore_DP0 pid=10539)[0;0m 
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:13:59 [default_loader.py:291] Loading weights took 1.18 seconds
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:13:59 [gpu_model_runner.py:3905] Model loading took 1.05 GiB memory and 1.540612 seconds
+[0;36m(EngineCore_DP0 pid=10539)[0;0m WARNING 08-04 04:14:01 [fused_moe.py:1090] Using default MoE config. Performance might be sub-optimal! Config file not found at /home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/layers/fused_moe/configs/E=8,N=3072,device_name=NVIDIA_RTX_A6000,dtype=float32.json
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:14:04 [gpu_worker.py:312] Initial free memory 43.17 GiB, reserved 0.07 GiB memory for KV Cache as specified by kv_cache_memory_bytes config and skipped memory profiling. This does not respect the gpu_memory_utilization config. Only use kv_cache_memory_bytes config when you want manual control of KV cache memory size. If OOM'ed, check the difference of initial free memory between the current run and the previous run where kv_cache_memory_bytes is suggested and update it correspondingly.
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:14:04 [kv_cache_utils.py:1305] GPU KV cache size: 2,048 tokens
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:14:04 [kv_cache_utils.py:1310] Maximum concurrency for 1,024 tokens per request: 2.00x
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:14:04 [core.py:273] init engine (profile, create kv cache, warmup model) took 4.35 seconds
+[0;36m(EngineCore_DP0 pid=10539)[0;0m WARNING 08-04 04:14:04 [registry.py:216] Using a slow tokenizer. This might cause a significant slowdown. Consider using a fast tokenizer instead.
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:14:04 [vllm.py:630] Asynchronous scheduling is enabled.
+[0;36m(EngineCore_DP0 pid=10539)[0;0m WARNING 08-04 04:14:04 [vllm.py:672] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+[0;36m(EngineCore_DP0 pid=10539)[0;0m INFO 08-04 04:14:04 [vllm.py:765] Cudagraph is disabled under eager mode
+[rank0]:[W804 04:14:07.873964618 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+{
+  "checkpoint": "/home/ubuntu/moe-inference-engine-69388e9/checkpoints/minimoe_sft.pt",
+  "model_dir": "/home/ubuntu/moe-inference-engine-69388e9/checkpoints/minimoe-hf",
+  "device": "cuda:0",
+  "gpu": "NVIDIA RTX A6000",
+  "prompt_tokens": 62,
+  "generated_tokens": 64,
+  "checkpoint_values_exact": true,
+  "hf_vs_original_logits": {
+    "max_absolute_error": 0.0003440380096435547,
+    "mean_absolute_error": 2.2385964257409796e-05,
+    "max_relative_error": 12.392889976501465,
+    "atol": 0.0005,
+    "rtol": 0.0001,
+    "passed": true
+  },
+  "engine_vs_original_logits": {
+    "max_absolute_error": 0.0003440380096435547,
+    "mean_absolute_error": 2.2385964257409796e-05,
+    "max_relative_error": 12.392889976501465,
+    "atol": 0.0005,
+    "rtol": 0.0001,
+    "passed": true
+  },
+  "hf_vs_engine_logits": {
+    "max_absolute_error": 0.0,
+    "mean_absolute_error": 0.0,
+    "max_relative_error": 0.0,
+    "atol": 1e-05,
+    "rtol": 1e-05,
+    "passed": true
+  },
+  "cuda_reference_tolerance_basis": "The vendored nn.MultiheadAttention CUDA path and the shared HF/engine SDPA path use different FP32 reduction orders; measured preflight max absolute error was 3.44038e-4 with identical argmaxes.",
+  "all_64_greedy_tokens_equal": true,
+  "generated_token_ids": [
+    262,
+    2746,
+    318,
+    407,
+    691,
+    6942,
+    475,
+    635,
+    468,
+    257,
+    1029,
+    4922,
+    286,
+    9922,
+    13,
+    198,
+    198,
+    464,
+    2746,
+    338,
+    2854,
+    318,
+    635,
+    16726,
+    416,
+    14176,
+    340,
+    284,
+    257,
+    2746,
+    326,
+    468,
+    587,
+    8776,
+    319,
+    257,
+    1588,
+    27039,
+    286,
+    1103,
+    12,
+    6894,
+    1366,
+    13,
+    383,
+    2746,
+    338,
+    2854,
+    318,
+    16726,
+    416,
+    14176,
+    340,
+    284,
+    257,
+    2746,
+    326,
+    468,
+    587,
+    8776,
+    319,
+    257,
+    1588,
+    27039
+  ],
+  "native_vllm_numerical_validation_passed": true,
+  "native_vllm": {
+    "vllm": {
+      "enforce_eager": false,
+      "full_vocabulary_size": 50304,
+      "normalized_logprob_errors": {
+        "max_absolute_error": 0.018218994140625,
+        "mean_absolute_error": 0.0064889066852629185,
+        "max_relative_error": 0.0019752555526793003
+      },
+      "atol": 1.0,
+      "rtol": 0.0002,
+      "all_64_greedy_tokens_equal": true,
+      "generated_token_ids": [
+        262,
+        2746,
+        318,
+        407,
+        691,
+        6942,
+        475,
+        635,
+        468,
+        257,
+        1029,
+        4922,
+        286,
+        9922,
+        13,
+        198,
+        198,
+        464,
+        2746,
+        338,
+        2854,
+        318,
+        635,
+        16726,
+        416,
+        14176,
+        340,
+        284,
+        257,
+        2746,
+        326,
+        468,
+        587,
+        8776,
+        319,
+        257,
+        1588,
+        27039,
+        286,
+        1103,
+        12,
+        6894,
+        1366,
+        13,
+        383,
+        2746,
+        338,
+        2854,
+        318,
+        16726,
+        416,
+        14176,
+        340,
+        284,
+        257,
+        2746,
+        326,
+        468,
+        587,
+        8776,
+        319,
+        257,
+        1588,
+        27039
+      ]
+    },
+    "vllm-eager": {
+      "enforce_eager": true,
+      "full_vocabulary_size": 50304,
+      "normalized_logprob_errors": {
+        "max_absolute_error": 0.017354965209960938,
+        "mean_absolute_error": 0.006307101808488369,
+        "max_relative_error": 0.0015196005115285516
+      },
+      "atol": 1.0,
+      "rtol": 0.0002,
+      "all_64_greedy_tokens_equal": true,
+      "generated_token_ids": [
+        262,
+        2746,
+        318,
+        407,
+        691,
+        6942,
+        475,
+        635,
+        468,
+        257,
+        1029,
+        4922,
+        286,
+        9922,
+        13,
+        198,
+        198,
+        464,
+        2746,
+        338,
+        2854,
+        318,
+        635,
+        16726,
+        416,
+        14176,
+        340,
+        284,
+        257,
+        2746,
+        326,
+        468,
+        587,
+        8776,
+        319,
+        257,
+        1588,
+        27039,
+        286,
+        1103,
+        12,
+        6894,
+        1366,
+        13,
+        383,
+        2746,
+        338,
+        2854,
+        318,
+        16726,
+        416,
+        14176,
+        340,
+        284,
+        257,
+        2746,
+        326,
+        468,
+        587,
+        8776,
+        319,
+        257,
+        1588,
+        27039
+      ]
+    }
+  },
+  "native_vllm_validation_basis": {
+    "comparison": "full-vocabulary normalized log-probabilities",
+    "reference": "Hugging Face FP32 logits after log_softmax",
+    "reserved_kv_cache_bytes": 75497472,
+    "timed": false
+  }
+}

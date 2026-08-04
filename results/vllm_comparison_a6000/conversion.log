@@ -1,0 +1,1023 @@
+{
+  "format": "minimoe-huggingface-v1",
+  "source_checkpoint": "/home/ubuntu/moe-inference-engine-69388e9/checkpoints/minimoe_sft.pt",
+  "source_sha256": "f8f9e91d05f00fe1d1579dc2d5ce0f2f728d0183f9424733fd93542e979d9529",
+  "checkpoint_step": 6358,
+  "tokens_seen": 833355776,
+  "dtype": "float32",
+  "state_dict_key_count": 252,
+  "state_dict_mapping": [
+    {
+      "source": "MoEBlocks.0.attention.in_proj_bias",
+      "target": "model.MoEBlocks.0.attention.in_proj_bias"
+    },
+    {
+      "source": "MoEBlocks.0.attention.in_proj_weight",
+      "target": "model.MoEBlocks.0.attention.in_proj_weight"
+    },
+    {
+      "source": "MoEBlocks.0.attention.out_proj.bias",
+      "target": "model.MoEBlocks.0.attention.out_proj.bias"
+    },
+    {
+      "source": "MoEBlocks.0.attention.out_proj.weight",
+      "target": "model.MoEBlocks.0.attention.out_proj.weight"
+    },
+    {
+      "source": "MoEBlocks.0.attn_norm.bias",
+      "target": "model.MoEBlocks.0.attn_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.0.attn_norm.weight",
+      "target": "model.MoEBlocks.0.attn_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.0.net.0.bias",
+      "target": "model.MoEBlocks.0.moe.experts.0.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.0.net.0.weight",
+      "target": "model.MoEBlocks.0.moe.experts.0.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.0.net.2.bias",
+      "target": "model.MoEBlocks.0.moe.experts.0.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.0.net.2.weight",
+      "target": "model.MoEBlocks.0.moe.experts.0.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.1.net.0.bias",
+      "target": "model.MoEBlocks.0.moe.experts.1.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.1.net.0.weight",
+      "target": "model.MoEBlocks.0.moe.experts.1.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.1.net.2.bias",
+      "target": "model.MoEBlocks.0.moe.experts.1.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.1.net.2.weight",
+      "target": "model.MoEBlocks.0.moe.experts.1.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.2.net.0.bias",
+      "target": "model.MoEBlocks.0.moe.experts.2.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.2.net.0.weight",
+      "target": "model.MoEBlocks.0.moe.experts.2.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.2.net.2.bias",
+      "target": "model.MoEBlocks.0.moe.experts.2.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.2.net.2.weight",
+      "target": "model.MoEBlocks.0.moe.experts.2.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.3.net.0.bias",
+      "target": "model.MoEBlocks.0.moe.experts.3.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.3.net.0.weight",
+      "target": "model.MoEBlocks.0.moe.experts.3.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.3.net.2.bias",
+      "target": "model.MoEBlocks.0.moe.experts.3.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.3.net.2.weight",
+      "target": "model.MoEBlocks.0.moe.experts.3.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.4.net.0.bias",
+      "target": "model.MoEBlocks.0.moe.experts.4.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.4.net.0.weight",
+      "target": "model.MoEBlocks.0.moe.experts.4.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.4.net.2.bias",
+      "target": "model.MoEBlocks.0.moe.experts.4.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.4.net.2.weight",
+      "target": "model.MoEBlocks.0.moe.experts.4.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.5.net.0.bias",
+      "target": "model.MoEBlocks.0.moe.experts.5.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.5.net.0.weight",
+      "target": "model.MoEBlocks.0.moe.experts.5.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.5.net.2.bias",
+      "target": "model.MoEBlocks.0.moe.experts.5.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.5.net.2.weight",
+      "target": "model.MoEBlocks.0.moe.experts.5.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.6.net.0.bias",
+      "target": "model.MoEBlocks.0.moe.experts.6.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.6.net.0.weight",
+      "target": "model.MoEBlocks.0.moe.experts.6.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.6.net.2.bias",
+      "target": "model.MoEBlocks.0.moe.experts.6.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.6.net.2.weight",
+      "target": "model.MoEBlocks.0.moe.experts.6.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.7.net.0.bias",
+      "target": "model.MoEBlocks.0.moe.experts.7.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.7.net.0.weight",
+      "target": "model.MoEBlocks.0.moe.experts.7.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.7.net.2.bias",
+      "target": "model.MoEBlocks.0.moe.experts.7.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe.experts.7.net.2.weight",
+      "target": "model.MoEBlocks.0.moe.experts.7.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe.router.weight",
+      "target": "model.MoEBlocks.0.moe.router.weight"
+    },
+    {
+      "source": "MoEBlocks.0.moe_norm.bias",
+      "target": "model.MoEBlocks.0.moe_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.0.moe_norm.weight",
+      "target": "model.MoEBlocks.0.moe_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.1.attention.in_proj_bias",
+      "target": "model.MoEBlocks.1.attention.in_proj_bias"
+    },
+    {
+      "source": "MoEBlocks.1.attention.in_proj_weight",
+      "target": "model.MoEBlocks.1.attention.in_proj_weight"
+    },
+    {
+      "source": "MoEBlocks.1.attention.out_proj.bias",
+      "target": "model.MoEBlocks.1.attention.out_proj.bias"
+    },
+    {
+      "source": "MoEBlocks.1.attention.out_proj.weight",
+      "target": "model.MoEBlocks.1.attention.out_proj.weight"
+    },
+    {
+      "source": "MoEBlocks.1.attn_norm.bias",
+      "target": "model.MoEBlocks.1.attn_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.1.attn_norm.weight",
+      "target": "model.MoEBlocks.1.attn_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.0.net.0.bias",
+      "target": "model.MoEBlocks.1.moe.experts.0.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.0.net.0.weight",
+      "target": "model.MoEBlocks.1.moe.experts.0.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.0.net.2.bias",
+      "target": "model.MoEBlocks.1.moe.experts.0.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.0.net.2.weight",
+      "target": "model.MoEBlocks.1.moe.experts.0.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.1.net.0.bias",
+      "target": "model.MoEBlocks.1.moe.experts.1.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.1.net.0.weight",
+      "target": "model.MoEBlocks.1.moe.experts.1.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.1.net.2.bias",
+      "target": "model.MoEBlocks.1.moe.experts.1.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.1.net.2.weight",
+      "target": "model.MoEBlocks.1.moe.experts.1.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.2.net.0.bias",
+      "target": "model.MoEBlocks.1.moe.experts.2.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.2.net.0.weight",
+      "target": "model.MoEBlocks.1.moe.experts.2.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.2.net.2.bias",
+      "target": "model.MoEBlocks.1.moe.experts.2.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.2.net.2.weight",
+      "target": "model.MoEBlocks.1.moe.experts.2.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.3.net.0.bias",
+      "target": "model.MoEBlocks.1.moe.experts.3.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.3.net.0.weight",
+      "target": "model.MoEBlocks.1.moe.experts.3.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.3.net.2.bias",
+      "target": "model.MoEBlocks.1.moe.experts.3.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.3.net.2.weight",
+      "target": "model.MoEBlocks.1.moe.experts.3.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.4.net.0.bias",
+      "target": "model.MoEBlocks.1.moe.experts.4.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.4.net.0.weight",
+      "target": "model.MoEBlocks.1.moe.experts.4.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.4.net.2.bias",
+      "target": "model.MoEBlocks.1.moe.experts.4.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.4.net.2.weight",
+      "target": "model.MoEBlocks.1.moe.experts.4.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.5.net.0.bias",
+      "target": "model.MoEBlocks.1.moe.experts.5.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.5.net.0.weight",
+      "target": "model.MoEBlocks.1.moe.experts.5.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.5.net.2.bias",
+      "target": "model.MoEBlocks.1.moe.experts.5.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.5.net.2.weight",
+      "target": "model.MoEBlocks.1.moe.experts.5.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.6.net.0.bias",
+      "target": "model.MoEBlocks.1.moe.experts.6.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.6.net.0.weight",
+      "target": "model.MoEBlocks.1.moe.experts.6.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.6.net.2.bias",
+      "target": "model.MoEBlocks.1.moe.experts.6.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.6.net.2.weight",
+      "target": "model.MoEBlocks.1.moe.experts.6.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.7.net.0.bias",
+      "target": "model.MoEBlocks.1.moe.experts.7.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.7.net.0.weight",
+      "target": "model.MoEBlocks.1.moe.experts.7.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.7.net.2.bias",
+      "target": "model.MoEBlocks.1.moe.experts.7.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe.experts.7.net.2.weight",
+      "target": "model.MoEBlocks.1.moe.experts.7.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe.router.weight",
+      "target": "model.MoEBlocks.1.moe.router.weight"
+    },
+    {
+      "source": "MoEBlocks.1.moe_norm.bias",
+      "target": "model.MoEBlocks.1.moe_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.1.moe_norm.weight",
+      "target": "model.MoEBlocks.1.moe_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.2.attention.in_proj_bias",
+      "target": "model.MoEBlocks.2.attention.in_proj_bias"
+    },
+    {
+      "source": "MoEBlocks.2.attention.in_proj_weight",
+      "target": "model.MoEBlocks.2.attention.in_proj_weight"
+    },
+    {
+      "source": "MoEBlocks.2.attention.out_proj.bias",
+      "target": "model.MoEBlocks.2.attention.out_proj.bias"
+    },
+    {
+      "source": "MoEBlocks.2.attention.out_proj.weight",
+      "target": "model.MoEBlocks.2.attention.out_proj.weight"
+    },
+    {
+      "source": "MoEBlocks.2.attn_norm.bias",
+      "target": "model.MoEBlocks.2.attn_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.2.attn_norm.weight",
+      "target": "model.MoEBlocks.2.attn_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.0.net.0.bias",
+      "target": "model.MoEBlocks.2.moe.experts.0.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.0.net.0.weight",
+      "target": "model.MoEBlocks.2.moe.experts.0.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.0.net.2.bias",
+      "target": "model.MoEBlocks.2.moe.experts.0.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.0.net.2.weight",
+      "target": "model.MoEBlocks.2.moe.experts.0.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.1.net.0.bias",
+      "target": "model.MoEBlocks.2.moe.experts.1.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.1.net.0.weight",
+      "target": "model.MoEBlocks.2.moe.experts.1.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.1.net.2.bias",
+      "target": "model.MoEBlocks.2.moe.experts.1.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.1.net.2.weight",
+      "target": "model.MoEBlocks.2.moe.experts.1.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.2.net.0.bias",
+      "target": "model.MoEBlocks.2.moe.experts.2.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.2.net.0.weight",
+      "target": "model.MoEBlocks.2.moe.experts.2.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.2.net.2.bias",
+      "target": "model.MoEBlocks.2.moe.experts.2.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.2.net.2.weight",
+      "target": "model.MoEBlocks.2.moe.experts.2.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.3.net.0.bias",
+      "target": "model.MoEBlocks.2.moe.experts.3.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.3.net.0.weight",
+      "target": "model.MoEBlocks.2.moe.experts.3.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.3.net.2.bias",
+      "target": "model.MoEBlocks.2.moe.experts.3.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.3.net.2.weight",
+      "target": "model.MoEBlocks.2.moe.experts.3.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.4.net.0.bias",
+      "target": "model.MoEBlocks.2.moe.experts.4.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.4.net.0.weight",
+      "target": "model.MoEBlocks.2.moe.experts.4.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.4.net.2.bias",
+      "target": "model.MoEBlocks.2.moe.experts.4.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.4.net.2.weight",
+      "target": "model.MoEBlocks.2.moe.experts.4.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.5.net.0.bias",
+      "target": "model.MoEBlocks.2.moe.experts.5.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.5.net.0.weight",
+      "target": "model.MoEBlocks.2.moe.experts.5.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.5.net.2.bias",
+      "target": "model.MoEBlocks.2.moe.experts.5.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.5.net.2.weight",
+      "target": "model.MoEBlocks.2.moe.experts.5.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.6.net.0.bias",
+      "target": "model.MoEBlocks.2.moe.experts.6.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.6.net.0.weight",
+      "target": "model.MoEBlocks.2.moe.experts.6.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.6.net.2.bias",
+      "target": "model.MoEBlocks.2.moe.experts.6.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.6.net.2.weight",
+      "target": "model.MoEBlocks.2.moe.experts.6.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.7.net.0.bias",
+      "target": "model.MoEBlocks.2.moe.experts.7.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.7.net.0.weight",
+      "target": "model.MoEBlocks.2.moe.experts.7.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.7.net.2.bias",
+      "target": "model.MoEBlocks.2.moe.experts.7.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe.experts.7.net.2.weight",
+      "target": "model.MoEBlocks.2.moe.experts.7.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe.router.weight",
+      "target": "model.MoEBlocks.2.moe.router.weight"
+    },
+    {
+      "source": "MoEBlocks.2.moe_norm.bias",
+      "target": "model.MoEBlocks.2.moe_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.2.moe_norm.weight",
+      "target": "model.MoEBlocks.2.moe_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.3.attention.in_proj_bias",
+      "target": "model.MoEBlocks.3.attention.in_proj_bias"
+    },
+    {
+      "source": "MoEBlocks.3.attention.in_proj_weight",
+      "target": "model.MoEBlocks.3.attention.in_proj_weight"
+    },
+    {
+      "source": "MoEBlocks.3.attention.out_proj.bias",
+      "target": "model.MoEBlocks.3.attention.out_proj.bias"
+    },
+    {
+      "source": "MoEBlocks.3.attention.out_proj.weight",
+      "target": "model.MoEBlocks.3.attention.out_proj.weight"
+    },
+    {
+      "source": "MoEBlocks.3.attn_norm.bias",
+      "target": "model.MoEBlocks.3.attn_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.3.attn_norm.weight",
+      "target": "model.MoEBlocks.3.attn_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.0.net.0.bias",
+      "target": "model.MoEBlocks.3.moe.experts.0.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.0.net.0.weight",
+      "target": "model.MoEBlocks.3.moe.experts.0.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.0.net.2.bias",
+      "target": "model.MoEBlocks.3.moe.experts.0.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.0.net.2.weight",
+      "target": "model.MoEBlocks.3.moe.experts.0.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.1.net.0.bias",
+      "target": "model.MoEBlocks.3.moe.experts.1.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.1.net.0.weight",
+      "target": "model.MoEBlocks.3.moe.experts.1.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.1.net.2.bias",
+      "target": "model.MoEBlocks.3.moe.experts.1.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.1.net.2.weight",
+      "target": "model.MoEBlocks.3.moe.experts.1.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.2.net.0.bias",
+      "target": "model.MoEBlocks.3.moe.experts.2.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.2.net.0.weight",
+      "target": "model.MoEBlocks.3.moe.experts.2.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.2.net.2.bias",
+      "target": "model.MoEBlocks.3.moe.experts.2.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.2.net.2.weight",
+      "target": "model.MoEBlocks.3.moe.experts.2.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.3.net.0.bias",
+      "target": "model.MoEBlocks.3.moe.experts.3.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.3.net.0.weight",
+      "target": "model.MoEBlocks.3.moe.experts.3.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.3.net.2.bias",
+      "target": "model.MoEBlocks.3.moe.experts.3.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.3.net.2.weight",
+      "target": "model.MoEBlocks.3.moe.experts.3.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.4.net.0.bias",
+      "target": "model.MoEBlocks.3.moe.experts.4.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.4.net.0.weight",
+      "target": "model.MoEBlocks.3.moe.experts.4.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.4.net.2.bias",
+      "target": "model.MoEBlocks.3.moe.experts.4.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.4.net.2.weight",
+      "target": "model.MoEBlocks.3.moe.experts.4.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.5.net.0.bias",
+      "target": "model.MoEBlocks.3.moe.experts.5.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.5.net.0.weight",
+      "target": "model.MoEBlocks.3.moe.experts.5.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.5.net.2.bias",
+      "target": "model.MoEBlocks.3.moe.experts.5.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.5.net.2.weight",
+      "target": "model.MoEBlocks.3.moe.experts.5.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.6.net.0.bias",
+      "target": "model.MoEBlocks.3.moe.experts.6.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.6.net.0.weight",
+      "target": "model.MoEBlocks.3.moe.experts.6.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.6.net.2.bias",
+      "target": "model.MoEBlocks.3.moe.experts.6.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.6.net.2.weight",
+      "target": "model.MoEBlocks.3.moe.experts.6.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.7.net.0.bias",
+      "target": "model.MoEBlocks.3.moe.experts.7.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.7.net.0.weight",
+      "target": "model.MoEBlocks.3.moe.experts.7.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.7.net.2.bias",
+      "target": "model.MoEBlocks.3.moe.experts.7.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe.experts.7.net.2.weight",
+      "target": "model.MoEBlocks.3.moe.experts.7.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe.router.weight",
+      "target": "model.MoEBlocks.3.moe.router.weight"
+    },
+    {
+      "source": "MoEBlocks.3.moe_norm.bias",
+      "target": "model.MoEBlocks.3.moe_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.3.moe_norm.weight",
+      "target": "model.MoEBlocks.3.moe_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.4.attention.in_proj_bias",
+      "target": "model.MoEBlocks.4.attention.in_proj_bias"
+    },
+    {
+      "source": "MoEBlocks.4.attention.in_proj_weight",
+      "target": "model.MoEBlocks.4.attention.in_proj_weight"
+    },
+    {
+      "source": "MoEBlocks.4.attention.out_proj.bias",
+      "target": "model.MoEBlocks.4.attention.out_proj.bias"
+    },
+    {
+      "source": "MoEBlocks.4.attention.out_proj.weight",
+      "target": "model.MoEBlocks.4.attention.out_proj.weight"
+    },
+    {
+      "source": "MoEBlocks.4.attn_norm.bias",
+      "target": "model.MoEBlocks.4.attn_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.4.attn_norm.weight",
+      "target": "model.MoEBlocks.4.attn_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.0.net.0.bias",
+      "target": "model.MoEBlocks.4.moe.experts.0.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.0.net.0.weight",
+      "target": "model.MoEBlocks.4.moe.experts.0.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.0.net.2.bias",
+      "target": "model.MoEBlocks.4.moe.experts.0.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.0.net.2.weight",
+      "target": "model.MoEBlocks.4.moe.experts.0.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.1.net.0.bias",
+      "target": "model.MoEBlocks.4.moe.experts.1.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.1.net.0.weight",
+      "target": "model.MoEBlocks.4.moe.experts.1.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.1.net.2.bias",
+      "target": "model.MoEBlocks.4.moe.experts.1.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.1.net.2.weight",
+      "target": "model.MoEBlocks.4.moe.experts.1.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.2.net.0.bias",
+      "target": "model.MoEBlocks.4.moe.experts.2.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.2.net.0.weight",
+      "target": "model.MoEBlocks.4.moe.experts.2.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.2.net.2.bias",
+      "target": "model.MoEBlocks.4.moe.experts.2.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.2.net.2.weight",
+      "target": "model.MoEBlocks.4.moe.experts.2.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.3.net.0.bias",
+      "target": "model.MoEBlocks.4.moe.experts.3.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.3.net.0.weight",
+      "target": "model.MoEBlocks.4.moe.experts.3.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.3.net.2.bias",
+      "target": "model.MoEBlocks.4.moe.experts.3.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.3.net.2.weight",
+      "target": "model.MoEBlocks.4.moe.experts.3.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.4.net.0.bias",
+      "target": "model.MoEBlocks.4.moe.experts.4.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.4.net.0.weight",
+      "target": "model.MoEBlocks.4.moe.experts.4.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.4.net.2.bias",
+      "target": "model.MoEBlocks.4.moe.experts.4.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.4.net.2.weight",
+      "target": "model.MoEBlocks.4.moe.experts.4.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.5.net.0.bias",
+      "target": "model.MoEBlocks.4.moe.experts.5.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.5.net.0.weight",
+      "target": "model.MoEBlocks.4.moe.experts.5.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.5.net.2.bias",
+      "target": "model.MoEBlocks.4.moe.experts.5.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.5.net.2.weight",
+      "target": "model.MoEBlocks.4.moe.experts.5.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.6.net.0.bias",
+      "target": "model.MoEBlocks.4.moe.experts.6.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.6.net.0.weight",
+      "target": "model.MoEBlocks.4.moe.experts.6.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.6.net.2.bias",
+      "target": "model.MoEBlocks.4.moe.experts.6.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.6.net.2.weight",
+      "target": "model.MoEBlocks.4.moe.experts.6.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.7.net.0.bias",
+      "target": "model.MoEBlocks.4.moe.experts.7.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.7.net.0.weight",
+      "target": "model.MoEBlocks.4.moe.experts.7.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.7.net.2.bias",
+      "target": "model.MoEBlocks.4.moe.experts.7.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe.experts.7.net.2.weight",
+      "target": "model.MoEBlocks.4.moe.experts.7.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe.router.weight",
+      "target": "model.MoEBlocks.4.moe.router.weight"
+    },
+    {
+      "source": "MoEBlocks.4.moe_norm.bias",
+      "target": "model.MoEBlocks.4.moe_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.4.moe_norm.weight",
+      "target": "model.MoEBlocks.4.moe_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.5.attention.in_proj_bias",
+      "target": "model.MoEBlocks.5.attention.in_proj_bias"
+    },
+    {
+      "source": "MoEBlocks.5.attention.in_proj_weight",
+      "target": "model.MoEBlocks.5.attention.in_proj_weight"
+    },
+    {
+      "source": "MoEBlocks.5.attention.out_proj.bias",
+      "target": "model.MoEBlocks.5.attention.out_proj.bias"
+    },
+    {
+      "source": "MoEBlocks.5.attention.out_proj.weight",
+      "target": "model.MoEBlocks.5.attention.out_proj.weight"
+    },
+    {
+      "source": "MoEBlocks.5.attn_norm.bias",
+      "target": "model.MoEBlocks.5.attn_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.5.attn_norm.weight",
+      "target": "model.MoEBlocks.5.attn_norm.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.0.net.0.bias",
+      "target": "model.MoEBlocks.5.moe.experts.0.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.0.net.0.weight",
+      "target": "model.MoEBlocks.5.moe.experts.0.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.0.net.2.bias",
+      "target": "model.MoEBlocks.5.moe.experts.0.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.0.net.2.weight",
+      "target": "model.MoEBlocks.5.moe.experts.0.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.1.net.0.bias",
+      "target": "model.MoEBlocks.5.moe.experts.1.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.1.net.0.weight",
+      "target": "model.MoEBlocks.5.moe.experts.1.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.1.net.2.bias",
+      "target": "model.MoEBlocks.5.moe.experts.1.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.1.net.2.weight",
+      "target": "model.MoEBlocks.5.moe.experts.1.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.2.net.0.bias",
+      "target": "model.MoEBlocks.5.moe.experts.2.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.2.net.0.weight",
+      "target": "model.MoEBlocks.5.moe.experts.2.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.2.net.2.bias",
+      "target": "model.MoEBlocks.5.moe.experts.2.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.2.net.2.weight",
+      "target": "model.MoEBlocks.5.moe.experts.2.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.3.net.0.bias",
+      "target": "model.MoEBlocks.5.moe.experts.3.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.3.net.0.weight",
+      "target": "model.MoEBlocks.5.moe.experts.3.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.3.net.2.bias",
+      "target": "model.MoEBlocks.5.moe.experts.3.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.3.net.2.weight",
+      "target": "model.MoEBlocks.5.moe.experts.3.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.4.net.0.bias",
+      "target": "model.MoEBlocks.5.moe.experts.4.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.4.net.0.weight",
+      "target": "model.MoEBlocks.5.moe.experts.4.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.4.net.2.bias",
+      "target": "model.MoEBlocks.5.moe.experts.4.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.4.net.2.weight",
+      "target": "model.MoEBlocks.5.moe.experts.4.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.5.net.0.bias",
+      "target": "model.MoEBlocks.5.moe.experts.5.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.5.net.0.weight",
+      "target": "model.MoEBlocks.5.moe.experts.5.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.5.net.2.bias",
+      "target": "model.MoEBlocks.5.moe.experts.5.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.5.net.2.weight",
+      "target": "model.MoEBlocks.5.moe.experts.5.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.6.net.0.bias",
+      "target": "model.MoEBlocks.5.moe.experts.6.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.6.net.0.weight",
+      "target": "model.MoEBlocks.5.moe.experts.6.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.6.net.2.bias",
+      "target": "model.MoEBlocks.5.moe.experts.6.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.6.net.2.weight",
+      "target": "model.MoEBlocks.5.moe.experts.6.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.7.net.0.bias",
+      "target": "model.MoEBlocks.5.moe.experts.7.net.0.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.7.net.0.weight",
+      "target": "model.MoEBlocks.5.moe.experts.7.net.0.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.7.net.2.bias",
+      "target": "model.MoEBlocks.5.moe.experts.7.net.2.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe.experts.7.net.2.weight",
+      "target": "model.MoEBlocks.5.moe.experts.7.net.2.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe.router.weight",
+      "target": "model.MoEBlocks.5.moe.router.weight"
+    },
+    {
+      "source": "MoEBlocks.5.moe_norm.bias",
+      "target": "model.MoEBlocks.5.moe_norm.bias"
+    },
+    {
+      "source": "MoEBlocks.5.moe_norm.weight",
+      "target": "model.MoEBlocks.5.moe_norm.weight"
+    },
+    {
+      "source": "final_norm.bias",
+      "target": "model.final_norm.bias"
+    },
+    {
+      "source": "final_norm.weight",
+      "target": "model.final_norm.weight"
+    },
+    {
+      "source": "output_projection.bias",
+      "target": "lm_head.bias"
+    },
+    {
+      "source": "output_projection.weight",
+      "target": "lm_head.weight"
+    },
+    {
+      "source": "positional_embedding.weight",
+      "target": "model.positional_embedding.weight"
+    },
+    {
+      "source": "token_embedding.weight",
+      "target": "model.token_embedding.weight"
+    }
+  ],
+  "tied_weights": [
+    "model.token_embedding.weight",
+    "lm_head.weight"
+  ]
+}

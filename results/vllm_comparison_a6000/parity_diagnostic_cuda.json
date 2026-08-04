@@ -1,0 +1,30 @@
+{
+  "hf_sdpa_vs_reference": {
+    "max_absolute_error": 0.0003440380096435547,
+    "mean_absolute_error": 2.2385964257409796e-05,
+    "p99_absolute_error": 9.274482727050781e-05,
+    "p999_absolute_error": 0.00013828277587890625,
+    "argmax_mismatch_positions": 0
+  },
+  "engine_vs_reference": {
+    "max_absolute_error": 0.0003440380096435547,
+    "mean_absolute_error": 2.2385964257409796e-05,
+    "p99_absolute_error": 9.274482727050781e-05,
+    "p999_absolute_error": 0.00013828277587890625,
+    "argmax_mismatch_positions": 0
+  },
+  "hf_sdpa_last_token_vs_reference": {
+    "max_absolute_error": 0.00010061264038085938,
+    "mean_absolute_error": 1.8552193068899214e-05,
+    "p99_absolute_error": 6.0558319091796875e-05,
+    "p999_absolute_error": 7.789116352796555e-05,
+    "argmax_mismatch_positions": 0
+  },
+  "engine_last_token_vs_reference": {
+    "max_absolute_error": 0.00010061264038085938,
+    "mean_absolute_error": 1.8552193068899214e-05,
+    "p99_absolute_error": 6.0558319091796875e-05,
+    "p999_absolute_error": 7.789116352796555e-05,
+    "argmax_mismatch_positions": 0
+  }
+}

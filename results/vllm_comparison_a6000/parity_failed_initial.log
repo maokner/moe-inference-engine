@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/moe-inference-engine-69388e9/scripts/validate_hf_parity.py", line 342, in <module>
+    main()
+  File "/home/ubuntu/moe-inference-engine-69388e9/scripts/validate_hf_parity.py", line 333, in main
+    report = validate(args)
+             ^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/scripts/validate_hf_parity.py", line 248, in validate
+    torch.testing.assert_close(hf_logits, reference_logits, atol=ATOL_HF, rtol=RTOL_HF)
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/torch/testing/_comparison.py", line 1589, in assert_close
+    raise error_metas[0].to_error(msg)
+AssertionError: Tensor-likes are not close!
+
+Mismatched elements: 485585 / 3118848 (15.6%)
+Greatest absolute difference: 0.0003440380096435547 at index (0, 30, 3769) (up to 1e-05 allowed)
+Greatest relative difference: 12.392889976501465 at index (0, 16, 10084) (up to 1e-05 allowed)

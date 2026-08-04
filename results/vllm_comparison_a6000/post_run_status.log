@@ -1,0 +1,5 @@
+f9eccd636f354436bebfedc9fa2fec715f58afc3
+?? results/vllm_comparison_a6000/
+f8f9e91d05f00fe1d1579dc2d5ce0f2f728d0183f9424733fd93542e979d9529  checkpoints/minimoe_sft.pt
+NVIDIA RTX A6000, 610.43.02, 49140 MiB
+Python 3.12.13

@@ -1,0 +1,197 @@
+INFO 08-04 03:54:04 [model.py:530] Resolved architecture: MiniMoEForCausalLM
+INFO 08-04 03:54:04 [model.py:1545] Using max model len 1024
+INFO 08-04 03:54:04 [scheduler.py:229] Chunked prefill is enabled with max_num_batched_tokens=1024.
+INFO 08-04 03:54:04 [vllm.py:630] Asynchronous scheduling is enabled.
+INFO 08-04 03:54:04 [vllm.py:637] Disabling NCCL for DP synchronization when using async scheduling.
+WARNING 08-04 03:54:04 [vllm.py:665] Enforce eager set, overriding optimization level to -O0
+INFO 08-04 03:54:04 [vllm.py:765] Cudagraph is disabled under eager mode
+WARNING 08-04 03:54:04 [registry.py:216] Using a slow tokenizer. This might cause a significant slowdown. Consider using a fast tokenizer instead.
+WARNING 08-04 03:54:04 [serial_utils.py:57] Allowing insecure serialization using pickle due to VLLM_ALLOW_INSECURE_SERIALIZATION=1
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:04 [core.py:97] Initializing a V1 LLM engine (v0.14.1) with config: model='checkpoints/minimoe-hf', speculative_config=None, tokenizer='checkpoints/minimoe-hf', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.float32, max_seq_len=1024, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=True, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=checkpoints/minimoe-hf, enable_prefix_caching=False, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.NONE: 0>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['all'], 'splitting_ops': [], 'compile_mm_encoder': False, 'compile_sizes': [], 'compile_ranges_split_points': [1024], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.NONE: 0>, 'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes': [], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'eliminate_noops': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False}, 'max_cudagraph_capture_size': 0, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': True}, 'local_cache_dir': None}
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:08 [parallel_state.py:1214] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://10.240.125.203:48333 backend=nccl
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:08 [parallel_state.py:1425] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank 0
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:09 [gpu_model_runner.py:3808] Starting to load model checkpoints/minimoe-hf...
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:09 [cuda.py:351] Using TRITON_ATTN attention backend out of potential backends: ('TRITON_ATTN', 'FLEX_ATTENTION')
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:12 [default_loader.py:291] Loading weights took 2.59 seconds
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:13 [gpu_model_runner.py:3905] Model loading took 1.05 GiB memory and 3.049991 seconds
+[0;36m(EngineCore_DP0 pid=4988)[0;0m WARNING 08-04 03:54:14 [fused_moe.py:1090] Using default MoE config. Performance might be sub-optimal! Config file not found at /home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/layers/fused_moe/configs/E=8,N=3072,device_name=NVIDIA_RTX_A6000,dtype=float32.json
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:17 [gpu_worker.py:312] Initial free memory 47.09 GiB, reserved 0.07 GiB memory for KV Cache as specified by kv_cache_memory_bytes config and skipped memory profiling. This does not respect the gpu_memory_utilization config. Only use kv_cache_memory_bytes config when you want manual control of KV cache memory size. If OOM'ed, check the difference of initial free memory between the current run and the previous run where kv_cache_memory_bytes is suggested and update it correspondingly.
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:17 [kv_cache_utils.py:1305] GPU KV cache size: 2,048 tokens
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:17 [kv_cache_utils.py:1310] Maximum concurrency for 1,024 tokens per request: 2.00x
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:17 [core.py:273] init engine (profile, create kv cache, warmup model) took 4.13 seconds
+[0;36m(EngineCore_DP0 pid=4988)[0;0m WARNING 08-04 03:54:17 [vllm.py:672] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+[0;36m(EngineCore_DP0 pid=4988)[0;0m INFO 08-04 03:54:17 [vllm.py:765] Cudagraph is disabled under eager mode
+[
+  {
+    "token_embedding": {
+      "shape": [
+        50304,
+        768
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "positional_embedding": {
+      "shape": [
+        1024,
+        768
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "lm_head_bias": {
+      "shape": [
+        50304
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "attention_in_weight": {
+      "shape": [
+        2304,
+        768
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "attention_in_bias": {
+      "shape": [
+        2304
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "attention_out_weight": {
+      "shape": [
+        768,
+        768
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "router": {
+      "shape": [
+        8,
+        768
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "expert0_w1": {
+      "shape": [
+        3072,
+        768
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "expert0_b1": {
+      "shape": [
+        3072
+      ],
+      "max": 0.10775965452194214,
+      "mean": 0.02310485579073429
+    },
+    "expert0_w2": {
+      "shape": [
+        768,
+        3072
+      ],
+      "max": 0.0,
+      "mean": 0.0
+    },
+    "expert0_b2": {
+      "shape": [
+        768
+      ],
+      "max": 0.3435426652431488,
+      "mean": 0.021538428962230682
+    },
+    "tied_pointer": true,
+    "parameter_names": [
+      "lm_head.bias",
+      "model.MoEBlocks.0.attention.in_proj.bias",
+      "model.MoEBlocks.0.attention.in_proj.weight",
+      "model.MoEBlocks.0.attention.out_proj.bias",
+      "model.MoEBlocks.0.attention.out_proj.weight",
+      "model.MoEBlocks.0.attn_norm.bias",
+      "model.MoEBlocks.0.attn_norm.weight",
+      "model.MoEBlocks.0.moe.experts.w13_bias",
+      "model.MoEBlocks.0.moe.experts.w13_weight",
+      "model.MoEBlocks.0.moe.experts.w2_bias",
+      "model.MoEBlocks.0.moe.experts.w2_weight",
+      "model.MoEBlocks.0.moe.router.weight",
+      "model.MoEBlocks.0.moe_norm.bias",
+      "model.MoEBlocks.0.moe_norm.weight",
+      "model.MoEBlocks.1.attention.in_proj.bias",
+      "model.MoEBlocks.1.attention.in_proj.weight",
+      "model.MoEBlocks.1.attention.out_proj.bias",
+      "model.MoEBlocks.1.attention.out_proj.weight",
+      "model.MoEBlocks.1.attn_norm.bias",
+      "model.MoEBlocks.1.attn_norm.weight",
+      "model.MoEBlocks.1.moe.experts.w13_bias",
+      "model.MoEBlocks.1.moe.experts.w13_weight",
+      "model.MoEBlocks.1.moe.experts.w2_bias",
+      "model.MoEBlocks.1.moe.experts.w2_weight",
+      "model.MoEBlocks.1.moe.router.weight",
+      "model.MoEBlocks.1.moe_norm.bias",
+      "model.MoEBlocks.1.moe_norm.weight",
+      "model.MoEBlocks.2.attention.in_proj.bias",
+      "model.MoEBlocks.2.attention.in_proj.weight",
+      "model.MoEBlocks.2.attention.out_proj.bias",
+      "model.MoEBlocks.2.attention.out_proj.weight",
+      "model.MoEBlocks.2.attn_norm.bias",
+      "model.MoEBlocks.2.attn_norm.weight",
+      "model.MoEBlocks.2.moe.experts.w13_bias",
+      "model.MoEBlocks.2.moe.experts.w13_weight",
+      "model.MoEBlocks.2.moe.experts.w2_bias",
+      "model.MoEBlocks.2.moe.experts.w2_weight",
+      "model.MoEBlocks.2.moe.router.weight",
+      "model.MoEBlocks.2.moe_norm.bias",
+      "model.MoEBlocks.2.moe_norm.weight",
+      "model.MoEBlocks.3.attention.in_proj.bias",
+      "model.MoEBlocks.3.attention.in_proj.weight",
+      "model.MoEBlocks.3.attention.out_proj.bias",
+      "model.MoEBlocks.3.attention.out_proj.weight",
+      "model.MoEBlocks.3.attn_norm.bias",
+      "model.MoEBlocks.3.attn_norm.weight",
+      "model.MoEBlocks.3.moe.experts.w13_bias",
+      "model.MoEBlocks.3.moe.experts.w13_weight",
+      "model.MoEBlocks.3.moe.experts.w2_bias",
+      "model.MoEBlocks.3.moe.experts.w2_weight",
+      "model.MoEBlocks.3.moe.router.weight",
+      "model.MoEBlocks.3.moe_norm.bias",
+      "model.MoEBlocks.3.moe_norm.weight",
+      "model.MoEBlocks.4.attention.in_proj.bias",
+      "model.MoEBlocks.4.attention.in_proj.weight",
+      "model.MoEBlocks.4.attention.out_proj.bias",
+      "model.MoEBlocks.4.attention.out_proj.weight",
+      "model.MoEBlocks.4.attn_norm.bias",
+      "model.MoEBlocks.4.attn_norm.weight",
+      "model.MoEBlocks.4.moe.experts.w13_bias",
+      "model.MoEBlocks.4.moe.experts.w13_weight",
+      "model.MoEBlocks.4.moe.experts.w2_bias",
+      "model.MoEBlocks.4.moe.experts.w2_weight",
+      "model.MoEBlocks.4.moe.router.weight",
+      "model.MoEBlocks.4.moe_norm.bias",
+      "model.MoEBlocks.4.moe_norm.weight",
+      "model.MoEBlocks.5.attention.in_proj.bias",
+      "model.MoEBlocks.5.attention.in_proj.weight",
+      "model.MoEBlocks.5.attention.out_proj.bias",
+      "model.MoEBlocks.5.attention.out_proj.weight",
+      "model.MoEBlocks.5.attn_norm.bias",
+      "model.MoEBlocks.5.attn_norm.weight",
+      "model.MoEBlocks.5.moe.experts.w13_bias",
+      "model.MoEBlocks.5.moe.experts.w13_weight",
+      "model.MoEBlocks.5.moe.experts.w2_bias",
+      "model.MoEBlocks.5.moe.experts.w2_weight",
+      "model.MoEBlocks.5.moe.router.weight",
+      "model.MoEBlocks.5.moe_norm.bias",
+      "model.MoEBlocks.5.moe_norm.weight",
+      "model.final_norm.bias",
+      "model.final_norm.weight",
+      "model.positional_embedding.weight",
+      "model.token_embedding.weight"
+    ]
+  }
+]

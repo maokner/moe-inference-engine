@@ -1,0 +1,19 @@
+{
+  "git_commit": "f9eccd636f354436bebfedc9fa2fec715f58afc3",
+  "git_tracked_status": [],
+  "git_full_status": [
+    "?? results/vllm_comparison_a6000/"
+  ],
+  "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.35",
+  "python": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]",
+  "gpu": "NVIDIA RTX A6000",
+  "driver": "610.43.02",
+  "gpu_memory_mib": 49140,
+  "torch": "2.9.1+cu128",
+  "torch_cuda": "12.8",
+  "triton": "3.5.1",
+  "transformers": "4.57.6",
+  "vllm": "0.14.1",
+  "checkpoint_path": "/home/ubuntu/moe-inference-engine-69388e9/checkpoints/minimoe_sft.pt",
+  "checkpoint_sha256": "f8f9e91d05f00fe1d1579dc2d5ce0f2f728d0183f9424733fd93542e979d9529"
+}

@@ -1,0 +1,6 @@
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+[0;36m(EngineCore_DP0 pid=5561)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+[0;36m(EngineCore_DP0 pid=5561)[0;0m Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:02<00:00,  2.13s/it]
+[0;36m(EngineCore_DP0 pid=5561)[0;0m Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:02<00:00,  2.13s/it]
+[0;36m(EngineCore_DP0 pid=5561)[0;0m 

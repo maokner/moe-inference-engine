@@ -1,0 +1,34 @@
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+[0;36m(EngineCore_DP0 pid=7191)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+[0;36m(EngineCore_DP0 pid=7191)[0;0m Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:02<00:00,  2.39s/it]
+[0;36m(EngineCore_DP0 pid=7191)[0;0m Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:02<00:00,  2.39s/it]
+[0;36m(EngineCore_DP0 pid=7191)[0;0m 
+Traceback (most recent call last):
+  File "/home/ubuntu/moe-inference-engine-69388e9/results/vllm_comparison_a6000/inspect_vllm_moe.py", line 78, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/results/vllm_comparison_a6000/inspect_vllm_moe.py", line 71, in main
+    report = await engine.collective_rpc(inspect_worker)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/v1/engine/async_llm.py", line 797, in collective_rpc
+    return await self.engine_core.collective_rpc_async(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 1017, in collective_rpc_async
+    return await self.call_utility_async(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 940, in call_utility_async
+    return await self._call_utility_async(method, *args, engine=self.core_engine)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 954, in _call_utility_async
+    return await future
+           ^^^^^^^^^^^^
+Exception: Call to collective_rpc method failed: Forward context is not set. Please use `set_forward_context` to set the forward context.

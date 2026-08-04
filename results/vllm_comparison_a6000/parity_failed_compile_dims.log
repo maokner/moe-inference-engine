@@ -1,0 +1,97 @@
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+ERROR 08-04 03:41:14 [registry.py:768] Error in inspecting model architecture 'MiniMoEForCausalLM'
+ERROR 08-04 03:41:14 [registry.py:768] Traceback (most recent call last):
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/models/registry.py", line 1192, in _run_in_subprocess
+ERROR 08-04 03:41:14 [registry.py:768]     returned.check_returncode()
+ERROR 08-04 03:41:14 [registry.py:768]   File "/usr/lib/python3.12/subprocess.py", line 502, in check_returncode
+ERROR 08-04 03:41:14 [registry.py:768]     raise CalledProcessError(self.returncode, self.args, self.stdout,
+ERROR 08-04 03:41:14 [registry.py:768] subprocess.CalledProcessError: Command '['/home/ubuntu/moe-inference-engine-69388e9/.venv/bin/python3', '-m', 'vllm.model_executor.models.registry']' returned non-zero exit status 1.
+ERROR 08-04 03:41:14 [registry.py:768] 
+ERROR 08-04 03:41:14 [registry.py:768] The above exception was the direct cause of the following exception:
+ERROR 08-04 03:41:14 [registry.py:768] 
+ERROR 08-04 03:41:14 [registry.py:768] Traceback (most recent call last):
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/models/registry.py", line 766, in _try_inspect_model_cls
+ERROR 08-04 03:41:14 [registry.py:768]     return model.inspect_model_cls()
+ERROR 08-04 03:41:14 [registry.py:768]            ^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/logging_utils/log_time.py", line 21, in _wrapper
+ERROR 08-04 03:41:14 [registry.py:768]     result = func(*args, **kwargs)
+ERROR 08-04 03:41:14 [registry.py:768]              ^^^^^^^^^^^^^^^^^^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/models/registry.py", line 727, in inspect_model_cls
+ERROR 08-04 03:41:14 [registry.py:768]     mi = _run_in_subprocess(
+ERROR 08-04 03:41:14 [registry.py:768]          ^^^^^^^^^^^^^^^^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/models/registry.py", line 1195, in _run_in_subprocess
+ERROR 08-04 03:41:14 [registry.py:768]     raise RuntimeError(
+ERROR 08-04 03:41:14 [registry.py:768] RuntimeError: Error raised in subprocess:
+ERROR 08-04 03:41:14 [registry.py:768] <frozen runpy>:128: RuntimeWarning: 'vllm.model_executor.models.registry' found in sys.modules after import of package 'vllm.model_executor.models', but prior to execution of 'vllm.model_executor.models.registry'; this may result in unpredictable behaviour
+ERROR 08-04 03:41:14 [registry.py:768] Traceback (most recent call last):
+ERROR 08-04 03:41:14 [registry.py:768]   File "<frozen runpy>", line 198, in _run_module_as_main
+ERROR 08-04 03:41:14 [registry.py:768]   File "<frozen runpy>", line 88, in _run_code
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/models/registry.py", line 1218, in <module>
+ERROR 08-04 03:41:14 [registry.py:768]     _run()
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/models/registry.py", line 1211, in _run
+ERROR 08-04 03:41:14 [registry.py:768]     result = fn()
+ERROR 08-04 03:41:14 [registry.py:768]              ^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/models/registry.py", line 728, in <lambda>
+ERROR 08-04 03:41:14 [registry.py:768]     lambda: _ModelInfo.from_model_cls(self.load_model_cls())
+ERROR 08-04 03:41:14 [registry.py:768]                                       ^^^^^^^^^^^^^^^^^^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/model_executor/models/registry.py", line 741, in load_model_cls
+ERROR 08-04 03:41:14 [registry.py:768]     mod = importlib.import_module(self.module_name)
+ERROR 08-04 03:41:14 [registry.py:768]           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "/usr/lib/python3.12/importlib/__init__.py", line 90, in import_module
+ERROR 08-04 03:41:14 [registry.py:768]     return _bootstrap._gcd_import(name[level:], package, level)
+ERROR 08-04 03:41:14 [registry.py:768]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+ERROR 08-04 03:41:14 [registry.py:768]   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+ERROR 08-04 03:41:14 [registry.py:768]   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+ERROR 08-04 03:41:14 [registry.py:768]   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+ERROR 08-04 03:41:14 [registry.py:768]   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+ERROR 08-04 03:41:14 [registry.py:768]   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/src/moe_engine/vllm_model.py", line 119, in <module>
+ERROR 08-04 03:41:14 [registry.py:768]     @support_torch_compile
+ERROR 08-04 03:41:14 [registry.py:768]      ^^^^^^^^^^^^^^^^^^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/compilation/decorators.py", line 230, in support_torch_compile
+ERROR 08-04 03:41:14 [registry.py:768]     return cls_decorator_helper(cls)
+ERROR 08-04 03:41:14 [registry.py:768]            ^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 08-04 03:41:14 [registry.py:768]   File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/compilation/decorators.py", line 209, in cls_decorator_helper
+ERROR 08-04 03:41:14 [registry.py:768]     raise ValueError(
+ERROR 08-04 03:41:14 [registry.py:768] ValueError: No dynamic dimensions found in the forward method of <class 'moe_engine.vllm_model.MiniMoEVllmModel'>. Please provide dynamic_arg_dims explicitly.
+ERROR 08-04 03:41:14 [registry.py:768] 
+Traceback (most recent call last):
+  File "/home/ubuntu/moe-inference-engine-69388e9/scripts/validate_hf_parity.py", line 368, in <module>
+    main()
+  File "/home/ubuntu/moe-inference-engine-69388e9/scripts/validate_hf_parity.py", line 359, in main
+    report = validate(args)
+             ^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/scripts/validate_hf_parity.py", line 275, in validate
+    native_vllm = _validate_native_vllm(
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/scripts/validate_hf_parity.py", line 171, in _validate_native_vllm
+    native_logprobs, native_tokens = asyncio.run(
+                                     ^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/scripts/validate_hf_parity.py", line 116, in _native_vllm_oracle
+    engine = AsyncLLM.from_engine_args(engine_args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/v1/engine/async_llm.py", line 230, in from_engine_args
+    vllm_config = engine_args.create_engine_config(usage_context)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/engine/arg_utils.py", line 1369, in create_engine_config
+    model_config = self.create_model_config()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/vllm/engine/arg_utils.py", line 1223, in create_model_config
+    return ModelConfig(
+           ^^^^^^^^^^^^
+  File "/home/ubuntu/moe-inference-engine-69388e9/.venv/lib/python3.12/site-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for ModelConfig
+  Value error, Model architectures ['MiniMoEForCausalLM'] failed to be inspected. Please check the logs for more details. [type=value_error, input_value=ArgsKwargs((), {'model': ...rocessor_plugin': None}), input_type=ArgsKwargs]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
