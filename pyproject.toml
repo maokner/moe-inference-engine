@@ -4,14 +4,20 @@ version = "0.1.0"
 description = "From-scratch miniMoE inference focused on paged KV caching and single-request latency."
 requires-python = ">=3.12"
 dependencies = [
+    "safetensors>=0.5",
     "torch>=2.5",
     "tiktoken>=0.8",
+    "transformers>=4.56,<5",
     "numpy>=2",
 ]
 
 [project.optional-dependencies]
 server = ["fastapi>=0.115", "uvicorn>=0.32"]
 dev = ["pytest>=8", "httpx2"]
+vllm = ["vllm>=0.14,<0.15; platform_system == 'Linux'"]
+
+[project.entry-points."vllm.general_plugins"]
+minimoe = "moe_engine.vllm_plugin:register"
 
 [build-system]
 requires = ["hatchling"]
