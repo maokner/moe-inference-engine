@@ -78,10 +78,14 @@ uv run python scripts/validate_hf_parity.py \
   --checkpoint checkpoints/minimoe_sft.pt \
   --model-dir checkpoints/minimoe-hf \
   --device cuda \
+  --validate-native-vllm \
   --output results/vllm_comparison/parity.json
 ```
 
-The validator requires exact converted checkpoint values, Hugging Face versus original logits within `atol=1e-5, rtol=1e-5`, engine versus original logits within `atol=1e-4, rtol=1e-4`, and exact equality of all 64 greedy tokens.
+The validator requires exact converted checkpoint values, Hugging Face versus original logits within `atol=1e-5, rtol=1e-5`, and engine versus original logits within `atol=1e-4, rtol=1e-4`.
+For both native vLLM modes it requests all 50,304 normalized next-token log-probabilities and compares them with the Hugging Face FP32 distribution using `atol=2e-3, rtol=2e-4`.
+The wider vLLM tolerance permits fused-kernel reduction-order differences while still checking the complete attention, router, biased GELU expert, tied output-weight, and learned output-bias path.
+All five 64-token greedy sequences must match exactly.
 
 Run all three benchmarks in isolated processes:
 
@@ -92,11 +96,19 @@ uv run python benchmarks/vllm_compare.py \
   --device cuda \
   --checkpoint checkpoints/minimoe_sft.pt \
   --model-dir checkpoints/minimoe-hf \
+  --rounds 21 \
   --output results/vllm_comparison/comparison.json
 ```
 
 The harness fixes one active request, batch size one, FP32, the same local tokenizer, the canonical 62-token prompt, 64 greedy tokens with EOS ignored, and a 1,024-token context limit.
-It records time to first token, every inter-token latency, mean inter-token latency, total generation time, aggregate generated tokens per second, whole-device peak and incremental GPU memory, and generated-token equality.
+It runs the untimed native-vLLM numerical validator before benchmarking and refuses to publish a performance summary if any round has a token mismatch.
+Each of the default 21 rounds rotates the first system, and each system-round runs in a fresh process with a complete warmup before its one measured request.
+The report retains raw per-round results and provides paired per-round deltas with two-sided Student-t 95% confidence intervals for time to first token, mean inter-token latency, total generation time, and throughput.
+
+The minimum FP32 KV capacity is `1024 positions * 6 layers * 8 heads * 96 head dimensions * 2 for K and V * 4 bytes = 37,748,736 bytes`.
+vLLM receives a fixed default reservation of 75,497,472 bytes, which is a two-times safety margin and can be changed with `--kv-cache-memory-bytes`.
+vLLM 0.14.1 ignores `gpu_memory_utilization` when `kv_cache_memory_bytes` is set, so the report records fixed reserved KV bytes separately from sampled whole-device peak and incremental memory.
+The comparison does not use the previous 90-percent utilization reservation policy.
 
 No local MPS, local vLLM, or CUDA model workload is part of the implementation test suite.
 Runtime validation remains pending until the parent task authorizes the A6000 run.

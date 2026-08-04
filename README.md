@@ -52,4 +52,4 @@ Optional modes:
 The repository now includes a deterministic Hugging Face checkpoint converter, an exact local tiktoken tokenizer, a Transformers oracle, and a vLLM 0.14.x out-of-tree model plugin.
 The plugin uses vLLM's own attention and fused MoE runtime and does not reuse this engine's Triton kernels.
 
-See [`docs/vllm_compatibility.md`](docs/vllm_compatibility.md) for the compatibility inspection, conversion and parity commands, the generic Transformers MoE blocker, and the isolated three-system benchmark.
+See [`docs/vllm_compatibility.md`](docs/vllm_compatibility.md) for the compatibility inspection, native-plugin numerical gate, and the 21-round paired benchmark with rotating system order and fixed KV-cache memory.
